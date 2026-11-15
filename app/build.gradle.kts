@@ -8,7 +8,7 @@ val buildNumber = (System.getenv("BUILD_NUMBER") ?: "1").toInt()
 
 android {
     namespace = "io.github.adamstottdev.eufytv"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "io.github.adamstottdev.eufytv"
@@ -56,11 +56,14 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     buildFeatures {
         buildConfig = true
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
