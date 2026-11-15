@@ -112,9 +112,11 @@ function connectToApp() {
         }
     });
     // Without the app there is nothing to do: exit so the app can start us fresh.
-    const bye = () => shutdown(0);
-    sock.on("close", bye);
-    sock.on("error", bye);
+    sock.on("error", (e) => console.error(`[eufy-bridge] socket error: ${e && e.message}`));
+    sock.on("close", () => {
+        console.error("[eufy-bridge] connection to the app closed, exiting");
+        shutdown(0);
+    });
 }
 
 function libVersion() {

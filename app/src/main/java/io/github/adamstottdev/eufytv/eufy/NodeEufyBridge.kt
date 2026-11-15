@@ -123,7 +123,8 @@ class NodeEufyBridge(private val context: Context) : EufyBridge {
     private fun session() {
         val token = ByteArray(24).also { SecureRandom().nextBytes(it) }
             .joinToString("") { "%02x".format(it) }
-        val srv = ServerSocket(0, 1, InetAddress.getLoopbackAddress())
+        // Explicitly IPv4: on Android getLoopbackAddress() is ::1, and Node connects to 127.0.0.1.
+        val srv = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
         server = srv
         srv.soTimeout = 60_000
         emitState(BridgeState.Connecting)
