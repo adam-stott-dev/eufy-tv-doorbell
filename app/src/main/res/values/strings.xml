@@ -25,7 +25,10 @@
 
     <!-- Sign-in -->
     <string name="sign_in_title">Sign in to Eufy</string>
-    <string name="sign_in_help">Use the email and password you sign in to the Eufy Security app with.\n\n<b>Tip:</b> a second Eufy account works best. Create one with another email, then in the Eufy app on your phone share your doorbell and cameras with it. Signing in here with your main account can sometimes sign your phone out.\n\nIf you normally sign in to Eufy with Google or Apple, your account has no password: use a second account as above.\n\nTyping with the remote is slow. The Google TV app on your phone has a keyboard that types straight into the TV.\n\nYour password stays on this TV, encrypted with its secure key storage, and is only sent to Eufy.</string>
+    <string name="sign_in_qr">QR code for signing in on your phone</string>
+    <string name="sign_in_qr_text"><b>Easiest: scan this with your phone</b> (on the same Wi-Fi) and enter your details there. You can paste from your password manager.\n\nOr type them on the right.</string>
+    <string name="sign_in_from_phone">Got your details from your phone. Signing in…</string>
+    <string name="sign_in_help">Use the email and password you sign in to the Eufy Security app with.\n\n<b>Tip:</b> a second Eufy account works best. Create one with another email, then in the Eufy app on your phone share your doorbell and cameras with it. Signing in here with your main account can sometimes sign your phone out.\n\nIf you normally sign in to Eufy with Google or Apple, your account has no password: use a second account as above.\n\nTo type on the TV, the Google TV app on your phone has a keyboard that types straight into the TV.\n\nYour password stays on this TV, encrypted with its secure key storage, and is only sent to Eufy.</string>
     <string name="sign_in_email">Email</string>
     <string name="sign_in_password">Password</string>
     <string name="sign_in_password_keep">Password (leave empty to keep the saved one)</string>

@@ -1,8 +1,11 @@
 package io.github.adamstottdev.eufytv.settings
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
@@ -10,6 +13,9 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.EncodeHintType
+import com.google.zxing.qrcode.QRCodeWriter
 import io.github.adamstottdev.eufytv.R
 import io.github.adamstottdev.eufytv.eufy.AccountStore
 import io.github.adamstottdev.eufytv.eufy.BridgeState
@@ -35,6 +41,12 @@ class SignInActivity : AppCompatActivity() {
     private lateinit var status: TextView
     private lateinit var done: Button
     private lateinit var signOut: Button
+    private lateinit var phone: View
+    private lateinit var qr: ImageView
+    private lateinit var qrText: TextView
+    private var phoneServer: PhoneSignInServer? = null
+    private val main = Handler(Looper.getMainLooper())
+    private val renewQr = Runnable { stopPhoneSignIn(); render() }
 
     /** True after the user pressed Sign in, until it succeeds or fails. */
     private var waiting = false
@@ -55,6 +67,9 @@ class SignInActivity : AppCompatActivity() {
         status = findViewById(R.id.status)
         done = findViewById(R.id.done)
         signOut = findViewById(R.id.sign_out)
+        phone = findViewById(R.id.phone)
+        qr = findViewById(R.id.qr)
+        qrText = findViewById(R.id.qr_text)
 
         val store = AccountStore(this)
         email.setText(store.email.orEmpty())
@@ -91,6 +106,7 @@ class SignInActivity : AppCompatActivity() {
 
     override fun onPause() {
         isVisible = false
+        stopPhoneSignIn()
         EufyConnection.removeObserver(observer)
         super.onPause()
     }
@@ -109,11 +125,52 @@ class SignInActivity : AppCompatActivity() {
             pw.isEmpty() -> return showError(getString(R.string.sign_in_need_password))
             cc.length != 2 -> return showError(getString(R.string.sign_in_need_country))
         }
+        signInWith(EufyAccount(mail, pw, cc))
+    }
+
+    private fun signInWith(account: EufyAccount) {
         waiting = true
         password.setText("")
-        EufyConnection.signIn(this, EufyAccount(mail, pw, cc))
+        EufyConnection.signIn(this, account)
         if (Settings(this).serviceEnabled) DoorbellService.start(this)
         render()
+    }
+
+    /** Shows a QR code for the one-time sign-in page the TV serves to phones. */
+    private fun startPhoneSignIn() {
+        if (phoneServer != null) return
+        val server = PhoneSignInServer(this) { account ->
+            runOnUiThread {
+                email.setText(account.email)
+                country.setText(account.country)
+                stopPhoneSignIn()
+                signInWith(account)
+                status.setText(R.string.sign_in_from_phone)
+            }
+        }
+        val url = try { server.start() } catch (e: Exception) { null }
+        if (url == null) {
+            phone.visibility = View.GONE
+            return
+        }
+        phoneServer = server
+        qr.setImageBitmap(qrBitmap(url, 512))
+        qrText.setText(R.string.sign_in_qr_text)
+        phone.visibility = View.VISIBLE
+        main.removeCallbacks(renewQr)
+        main.postDelayed(renewQr, 9 * 60_000L) // a fresh code just before this one expires
+    }
+
+    private fun stopPhoneSignIn() {
+        main.removeCallbacks(renewQr)
+        phoneServer?.stop()
+        phoneServer = null
+    }
+
+    private fun qrBitmap(text: String, size: Int): Bitmap {
+        val m = QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, size, size, mapOf(EncodeHintType.MARGIN to 1))
+        val px = IntArray(size * size) { i -> if (m[i % size, i / size]) Color.BLACK else Color.WHITE }
+        return Bitmap.createBitmap(px, size, size, Bitmap.Config.ARGB_8888)
     }
 
     private fun doSubmitCode() {
@@ -173,6 +230,8 @@ class SignInActivity : AppCompatActivity() {
         }
         val signedIn = saved != null && state != BridgeState.SignedOut
         form.visibility = if (showForm) View.VISIBLE else View.GONE
+        if (showForm && isVisible && !(waiting && state == BridgeState.Connecting)) startPhoneSignIn()
+        else if (!showForm) { stopPhoneSignIn(); phone.visibility = View.GONE }
         signIn.isEnabled = state != BridgeState.Connecting || !waiting
         codeForm.visibility = if (showCode) View.VISIBLE else View.GONE
         captcha.visibility = if (showCaptcha) View.VISIBLE else View.GONE

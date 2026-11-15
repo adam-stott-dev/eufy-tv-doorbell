@@ -30,7 +30,7 @@ A lightweight background app for Android TV. When your Eufy doorbell rings, or a
    ```
    adb shell dumpsys deviceidle whitelist +io.github.adamstottdev.eufytv
    ```
-5. Open **Eufy TV Doorbell** from the apps row, choose **Eufy account**, sign in, and choose your settings. The Google TV app on your phone has a keyboard that types into the TV.
+5. Open **Eufy TV Doorbell** from the apps row, choose **Eufy account** and sign in: scan the QR code with your phone and enter your details there (it's one-time, home network only, and encrypted on the phone), or type them on the TV. Then choose your settings.
 
 If anything stops the pop-ups working later (Eufy signs you out, a verification code is needed, the connection drops for more than a few minutes), a red message appears on screen and repeats until it's fixed. You can change how often in **Advanced**.
 

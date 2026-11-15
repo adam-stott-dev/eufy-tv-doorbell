@@ -85,6 +85,8 @@ dependencies {
     // Node.js for Android (in-process, arm64) and its loader. MIT licensed.
     implementation("io.github.fellow99:node-bridge:0.2.0")
     runtimeOnly("io.github.fellow99:node-runtime:24.22.1")
+    // QR code for signing in from a phone.
+    implementation("com.google.zxing:core:3.5.3")
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
