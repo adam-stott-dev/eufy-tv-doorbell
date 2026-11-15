@@ -28,4 +28,4 @@ Run on 15 Nov 2026 on an NVIDIA SHIELD TV Pro (2019, Android 11) in Termux 0.118
 - Motion / person events.
 - Delay between pressing the doorbell and the event arriving.
 - Behaviour after the SHIELD has been asleep with the TV off.
-- npm marks `eufy-security-client` and `eufy-security-ws` as "no longer supported" (since 12 Sep 2026); find where the library is maintained now.
+- Upstream has ended development (legacy Eufy API being shut down; a Mega-based successor is in development). See the update in [PLAN.md](PLAN.md).

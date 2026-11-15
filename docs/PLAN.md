@@ -28,6 +28,8 @@ Hardware support in client 4.1.0:
 - **Ring, motion and person events** come through Eufy's push notifications (`device rings`, `device motion detected`, `device person detected`).
 - **Livestream** comes over P2P from the station as raw H.264 or H.265 plus AAC audio (`startStationLivestream`), which Android can decode natively.
 
+**Update, 15 Nov 2026: upstream development has ended.** The maintainers posted ["Development of this project has ended"](https://github.com/bropat/eufy-security-client/issues/965): the library depends on Eufy's legacy API, which Eufy is shutting down, and a new integration built around "Eufy Mega" is in development (followed on their Discord, not yet published). npm marks both packages "no longer supported" since 12 Sep 2026. Version 4.1.x already signs in through the new Mega (v6) login first and the legacy one second, and it worked in our proof of concept. Our approach: pin 4.1.1, keep the Eufy bridge behind a small interface inside the app so it can be swapped for the Mega-based successor when it ships, and watch upstream.
+
 So the pieces we need exist, but the E340-through-HomeBase-3 livestream is recent and the HomeBase 3 support is marked partial. That is exactly what the proof of concept checks before we build on it.
 
 ## Step 1: proof of concept (now)
@@ -126,6 +128,6 @@ Settings are stored with DataStore; the password is stored encrypted with the An
 
 - **Deep standby.** With the TV off, the SHIELD may pause background work, so the first event after waking could be late or lost. Mitigations above; the PoC measures it.
 - **Load from a Node runtime** running all the time. Measured by the PoC; Kotlin port is the fallback.
-- **Eufy changes its protocol** and the library breaks for a while. Pinned library version, quick bump when upstream fixes it.
+- **Eufy shuts down its legacy API** and upstream has stopped maintaining the library. Login already uses the new API; push events or P2P may break when the legacy API goes. Mitigation: bridge behind an interface, pinned version, switch to the Mega-based successor once it is published.
 - **Livestream start time.** If P2P takes too long, keep the station connection warm and show a snapshot (the event image) until video arrives.
 - **Account side effects.** A secondary account avoids logging out the phone app; the sign-in screen will recommend it.
