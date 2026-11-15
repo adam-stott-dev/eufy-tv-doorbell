@@ -13,10 +13,11 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.util.Log
 import io.github.adamstottdev.eufytv.R
+import io.github.adamstottdev.eufytv.eufy.AccountStore
+import io.github.adamstottdev.eufytv.eufy.BridgeState
 import io.github.adamstottdev.eufytv.eufy.DoorbellEvent
-import io.github.adamstottdev.eufytv.eufy.EufyBridge
+import io.github.adamstottdev.eufytv.eufy.EufyConnection
 import io.github.adamstottdev.eufytv.eufy.EventType
-import io.github.adamstottdev.eufytv.eufy.NoEufyBridge
 import io.github.adamstottdev.eufytv.settings.Settings
 import io.github.adamstottdev.eufytv.settings.SettingsActivity
 
@@ -24,22 +25,34 @@ import io.github.adamstottdev.eufytv.settings.SettingsActivity
  * Always-on background service. Keeps the Eufy connection up, listens for
  * ring and motion events and hands them to [EventRouter].
  */
-class DoorbellService : Service(), EufyBridge.Listener {
+class DoorbellService : Service() {
     private lateinit var router: EventRouter
-    private var bridge: EufyBridge = NoEufyBridge()
+    private lateinit var alerts: ProblemAlerts
     private var wakeLock: PowerManager.WakeLock? = null
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val observer = EufyConnection.Observer { onConnectionChanged() }
+    private var lastNotificationText: String? = null
+    private val tick = object : Runnable {
+        override fun run() {
+            alerts.check()
+            handler.postDelayed(this, 60_000L)
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
         router = EventRouter(this)
+        alerts = ProblemAlerts(this)
         startInForeground(getString(R.string.status_starting))
         if (Settings(this).keepAwake) {
             wakeLock = (getSystemService(POWER_SERVICE) as PowerManager)
                 .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "eufytv:connection")
                 .apply { setReferenceCounted(false); acquire() }
         }
-        bridge.start(this)
+        EufyConnection.eventHandler = { event -> handler.post { router.onEvent(event) } }
+        EufyConnection.addObserver(observer)
+        if (!EufyConnection.isRunning) EufyConnection.start(this)
+        handler.postDelayed(tick, 60_000L)
         status = "running"
     }
 
@@ -52,13 +65,29 @@ class DoorbellService : Service(), EufyBridge.Listener {
                     router.onEvent(DoorbellEvent("test", getString(R.string.test_device_name), EventType.TEST))
                 }, delayMs)
             }
+            ACTION_LIVE -> {
+                val serial = intent.getStringExtra(EXTRA_SERIAL)
+                    ?: EufyConnection.cameras.firstOrNull { it.isDoorbell }?.serial
+                    ?: EufyConnection.cameras.firstOrNull()?.serial
+                val delayMs = intent.getLongExtra(EXTRA_DELAY_MS, 0L)
+                if (serial != null) {
+                    val name = EufyConnection.cameraName(serial) ?: serial
+                    handler.postDelayed({ router.onEvent(DoorbellEvent(serial, name, EventType.LIVE)) }, delayMs)
+                } else {
+                    Log.w(TAG, "No camera for live view (not signed in?)")
+                }
+            }
             ACTION_STOP -> { stopSelf(); return START_NOT_STICKY }
         }
         return START_STICKY
     }
 
     override fun onDestroy() {
-        bridge.stop()
+        handler.removeCallbacks(tick)
+        EufyConnection.removeObserver(observer)
+        EufyConnection.eventHandler = null
+        EufyConnection.stop()
+        alerts.release()
         wakeLock?.takeIf { it.isHeld }?.release()
         status = "stopped"
         super.onDestroy()
@@ -66,11 +95,20 @@ class DoorbellService : Service(), EufyBridge.Listener {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    override fun onEvent(event: DoorbellEvent) = router.onEvent(event)
-
-    override fun onStatus(status: String) {
-        Log.i(TAG, status)
-        startInForeground(status)
+    private fun onConnectionChanged() {
+        val email = AccountStore(this).email ?: ""
+        val text = when (val s = EufyConnection.state) {
+            BridgeState.SignedOut -> getString(R.string.account_signed_out)
+            is BridgeState.Connected -> getString(R.string.account_connected, email)
+            BridgeState.Connecting -> getString(R.string.account_connecting, email)
+            is BridgeState.Disconnected -> getString(R.string.account_offline, email) + " (${s.message})"
+            else -> getString(R.string.account_action, email)
+        }
+        if (text != lastNotificationText) {
+            lastNotificationText = text
+            startInForeground(text)
+        }
+        alerts.check()
     }
 
     private fun startInForeground(text: String) {
@@ -103,15 +141,18 @@ class DoorbellService : Service(), EufyBridge.Listener {
         private const val NOTIFICATION_ID = 1
         const val ACTION_TEST = "io.github.adamstottdev.eufytv.TEST_POPUP"
         const val ACTION_STOP = "io.github.adamstottdev.eufytv.STOP"
+        const val ACTION_LIVE = "io.github.adamstottdev.eufytv.LIVE_VIEW"
         const val EXTRA_DELAY_MS = "delay_ms"
+        const val EXTRA_SERIAL = "serial"
 
         @Volatile var status: String = "stopped"
             private set
 
-        fun start(context: Context, action: String? = null, delayMs: Long = 0) {
+        fun start(context: Context, action: String? = null, delayMs: Long = 0, serial: String? = null) {
             val intent = Intent(context, DoorbellService::class.java)
                 .setAction(action)
                 .putExtra(EXTRA_DELAY_MS, delayMs)
+            if (serial != null) intent.putExtra(EXTRA_SERIAL, serial)
             context.startForegroundService(intent)
         }
 

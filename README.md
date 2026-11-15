@@ -4,7 +4,9 @@ Pop up your Eufy doorbell's live video on Android TV when someone rings or motio
 
 A lightweight background app for Android TV. When your Eufy doorbell rings, or a Eufy camera sees motion, the live view appears on top of whatever is on screen (including the screensaver), then hides itself after a while. No extra hardware: everything runs on the TV box.
 
-> **Status: early.** We're validating the approach on an NVIDIA SHIELD TV with a Eufy Video Doorbell E340 and HomeBase S380 before building the app. See the [plan](docs/PLAN.md) and the [proof of concept](poc/README.md).
+> **Status: early.** Tested on an NVIDIA SHIELD TV with a Eufy Video Doorbell E340 and HomeBase S380. See the [plan](docs/PLAN.md) and the [proof of concept results](docs/POC-RESULTS.md).
+>
+> Needs a 64-bit ARM TV box (arm64-v8a), such as the SHIELD TV, Chromecast with Google TV or most current boxes.
 
 ## Planned features
 
@@ -28,7 +30,9 @@ A lightweight background app for Android TV. When your Eufy doorbell rings, or a
    ```
    adb shell dumpsys deviceidle whitelist +io.github.adamstottdev.eufytv
    ```
-5. Open **Eufy TV Doorbell** from the apps row, sign in, and choose your settings.
+5. Open **Eufy TV Doorbell** from the apps row, choose **Eufy account**, sign in, and choose your settings. The Google TV app on your phone has a keyboard that types into the TV.
+
+If anything stops the pop-ups working later (Eufy signs you out, a verification code is needed, the connection drops for more than a few minutes), a red message appears on screen and repeats until it's fixed. You can change how often in **Advanced**.
 
 ## Testing from a computer
 
@@ -40,9 +44,17 @@ adb shell am broadcast -a io.github.adamstottdev.eufytv.TEST_POPUP -n io.github.
 
 To test with real video, copy a raw `.h264` clip to `/sdcard/Android/data/io.github.adamstottdev.eufytv/files/test.h264`.
 
+Open the doorbell's live view the same way (or `--es live <camera serial>` for another camera):
+
+```
+adb shell am broadcast -a io.github.adamstottdev.eufytv.TEST_POPUP -n io.github.adamstottdev.eufytv/.service.TestTriggerReceiver --es live doorbell
+```
+
 ## How it works
 
-Eufy has no official API. The app embeds the open-source [eufy-security-client](https://github.com/bropat/eufy-security-client) library to sign in, receive ring and motion events, and open the livestream from your HomeBase, then decodes the video natively on the TV.
+Eufy has no official API. The app embeds the open-source [eufy-security-client](https://github.com/bropat/eufy-security-client) library, running on a Node.js runtime built into the APK ([aosp-node-runtime](https://github.com/fellow99/aosp-node-runtime)), to sign in, receive ring and motion events, and open the livestream from your HomeBase. The video and sound are decoded natively on the TV. The connection code is in [`bridge/`](bridge/).
+
+Your Eufy password stays on the TV, encrypted with a key held by the Android Keystore, and is only sent to Eufy.
 
 Use a **secondary Eufy account** with your cameras shared to it. Signing in with your main account elsewhere can log your phone app out.
 

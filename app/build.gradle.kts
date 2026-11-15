@@ -16,7 +16,16 @@ android {
         targetSdk = 35
         versionCode = buildNumber
         versionName = "0.1.$buildNumber"
+        // The embedded Node.js runtime is only built for 64-bit ARM (SHIELD and most current TV boxes).
+        ndk { abiFilters += "arm64-v8a" }
     }
+
+    // The Node runtime is loaded from the app's native library folder, so keep libraries as real files.
+    packaging {
+        jniLibs { useLegacyPackaging = true }
+    }
+
+    sourceSets["main"].assets.srcDir(layout.buildDirectory.dir("generated/bridge"))
 
     signingConfigs {
         create("release") {
@@ -55,7 +64,24 @@ android {
     }
 }
 
+// Bundles bridge/ (the Eufy connection, run by the embedded Node.js) into the app's assets.
+val bundleBridge by tasks.registering(Exec::class) {
+    val bridgeDir = rootProject.file("bridge")
+    val outDir = layout.buildDirectory.dir("generated/bridge/eufy-bridge")
+    inputs.dir(bridgeDir.resolve("src"))
+    inputs.files(bridgeDir.resolve("package.json"), bridgeDir.resolve("package-lock.json"), bridgeDir.resolve("build.mjs"))
+    outputs.dir(outDir)
+    workingDir = bridgeDir
+    val windows = System.getProperty("os.name").lowercase().contains("windows")
+    val shell = if (windows) listOf("cmd", "/c") else listOf("sh", "-c")
+    commandLine(shell + "npm ci --no-audit --no-fund && node build.mjs \"${outDir.get().asFile.absolutePath}\"")
+}
+tasks.named("preBuild") { dependsOn(bundleBridge) }
+
 dependencies {
+    // Node.js for Android (in-process, arm64) and its loader. MIT licensed.
+    implementation("io.github.fellow99:node-bridge:0.2.0")
+    runtimeOnly("io.github.fellow99:node-runtime:24.22.1")
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.preference:preference-ktx:1.2.1")

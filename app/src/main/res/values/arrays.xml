@@ -82,4 +82,17 @@
         <item>12</item><item>13</item><item>14</item><item>15</item><item>16</item><item>17</item>
         <item>18</item><item>19</item><item>20</item><item>21</item><item>22</item><item>23</item>
     </string-array>
+
+    <string-array name="reminder_names">
+        <item>Every 15 minutes</item>
+        <item>Every 30 minutes</item>
+        <item>Every hour</item>
+        <item>Only once</item>
+    </string-array>
+    <string-array name="reminder_values">
+        <item>15</item>
+        <item>30</item>
+        <item>60</item>
+        <item>0</item>
+    </string-array>
 </resources>

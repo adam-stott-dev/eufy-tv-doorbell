@@ -15,7 +15,9 @@ import android.view.View
 import android.view.WindowManager
 import io.github.adamstottdev.eufytv.R
 import io.github.adamstottdev.eufytv.eufy.DoorbellEvent
+import io.github.adamstottdev.eufytv.eufy.EufyConnection
 import io.github.adamstottdev.eufytv.eufy.EventType
+import io.github.adamstottdev.eufytv.eufy.LiveStreamSink
 import io.github.adamstottdev.eufytv.settings.Settings
 import java.io.File
 import java.text.DateFormat
@@ -39,6 +41,7 @@ object PopupController {
     private var current: DoorbellEvent? = null
     private var player: AnnexBPlayer? = null
     private var feeder: Thread? = null
+    private var live: LiveSink? = null
     private var screenLock: PowerManager.WakeLock? = null
     private var durationMs = 30_000L
     private val hideRunnable = Runnable { hide() }
@@ -82,6 +85,11 @@ object PopupController {
         feeder = null
         player?.release()
         player = null
+        live?.let { l ->
+            live = null
+            EufyConnection.stopLivestream(l.serial)
+            l.release()
+        }
         overlay?.let { v ->
             try {
                 (v.context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).removeView(v)
@@ -195,8 +203,57 @@ object PopupController {
             }, "TestVideoFeeder").apply { start() }
             return
         }
-        // Live video arrives with the Eufy connection (next milestone).
-        view.showMessage(ctx.getString(R.string.popup_no_live_yet))
+        val audio = when (Settings(ctx).audio) {
+            Settings.Audio.OFF -> false
+            Settings.Audio.ON -> true
+            Settings.Audio.RING_ONLY -> event.type == EventType.RING || event.type == EventType.LIVE
+        }
+        val sink = LiveSink(event.deviceSerial, surface, view, audio)
+        live = sink
+        EufyConnection.startLivestream(event.deviceSerial, sink)
+    }
+
+    /** Receives the camera's livestream and plays it in the pop-up. */
+    private class LiveSink(
+        val serial: String,
+        private val surface: Surface,
+        private val view: PopupView,
+        private val audioOn: Boolean,
+    ) : LiveStreamSink {
+        @Volatile private var video: AnnexBPlayer? = null
+        @Volatile private var sound: AacPlayer? = null
+        @Volatile private var released = false
+
+        override fun onStart(codec: String, width: Int, height: Int, fps: Int, hasAudio: Boolean) {
+            if (released) return
+            video?.release()
+            if (width > 0 && height > 0) view.setVideoSize(width, height)
+            video = AnnexBPlayer(surface, hevc = codec == "h265", onVideoSize = view::setVideoSize)
+            sound?.release()
+            sound = if (audioOn && hasAudio) AacPlayer() else null
+        }
+
+        override fun onVideo(data: ByteArray, offset: Int, length: Int) {
+            video?.feed(data, offset, length)
+        }
+
+        override fun onAudio(data: ByteArray, offset: Int, length: Int) {
+            sound?.feed(data, offset, length)
+        }
+
+        override fun onStop(reason: String?) {
+            if (released) return
+            if (reason != null) view.showMessage(reason)
+            release()
+        }
+
+        fun release() {
+            released = true
+            video?.release()
+            video = null
+            sound?.release()
+            sound = null
+        }
     }
 
     @SuppressLint("WakelockTimeout")
@@ -215,6 +272,7 @@ object PopupController {
             EventType.RING -> ctx.getString(R.string.event_ring)
             EventType.MOTION -> ctx.getString(R.string.event_motion)
             EventType.PERSON -> ctx.getString(R.string.event_person)
+            EventType.LIVE -> ctx.getString(R.string.event_live)
             EventType.TEST -> ctx.getString(R.string.event_test)
         }
         val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(e.timeMillis))

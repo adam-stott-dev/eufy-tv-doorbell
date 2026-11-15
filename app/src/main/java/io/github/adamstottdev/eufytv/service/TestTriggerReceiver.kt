@@ -10,11 +10,19 @@ import android.content.Intent
  *   adb shell am broadcast -a io.github.adamstottdev.eufytv.TEST_POPUP \
  *       -n io.github.adamstottdev.eufytv/.service.TestTriggerReceiver --el delay_ms 0
  *
+ * Add `--es live doorbell` (or `--es live <camera serial>`) to open the camera's
+ * live view instead of the test clip.
+ *
  * Protected by android.permission.DUMP, which adb's shell has and normal apps cannot get.
  */
 class TestTriggerReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val delayMs = intent.getLongExtra(DoorbellService.EXTRA_DELAY_MS, 0L).coerceIn(0L, 120_000L)
-        DoorbellService.start(context, DoorbellService.ACTION_TEST, delayMs)
+        val live = intent.getStringExtra("live")
+        if (live != null) {
+            DoorbellService.start(context, DoorbellService.ACTION_LIVE, delayMs, serial = live.takeIf { it != "doorbell" })
+        } else {
+            DoorbellService.start(context, DoorbellService.ACTION_TEST, delayMs)
+        }
     }
 }

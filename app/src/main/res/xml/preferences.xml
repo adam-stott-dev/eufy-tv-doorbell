@@ -2,6 +2,10 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <PreferenceCategory app:key="problem_category" app:title="Problem" app:isPreferenceVisible="false" app:iconSpaceReserved="false">
+        <Preference app:key="problem" app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="Status" app:iconSpaceReserved="false">
         <SwitchPreferenceCompat
             app:key="service_enabled"
@@ -18,9 +22,15 @@
     <PreferenceCategory app:title="Eufy account" app:iconSpaceReserved="false">
         <Preference
             app:key="account"
-            app:title="Sign in"
-            app:summary="Coming in the next update, with the Eufy connection"
-            app:enabled="false"
+            app:title="Eufy account"
+            app:iconSpaceReserved="false" />
+        <MultiSelectListPreference
+            app:key="cameras"
+            app:title="Cameras that pop up"
+            app:iconSpaceReserved="false" />
+        <Preference
+            app:key="live_view"
+            app:title="Show live view now"
             app:iconSpaceReserved="false" />
         <SwitchPreferenceCompat
             app:key="local_only"
@@ -147,6 +157,14 @@
     </PreferenceCategory>
 
     <PreferenceCategory app:title="Advanced" app:iconSpaceReserved="false">
+        <ListPreference
+            app:key="problem_reminder"
+            app:defaultValue="30"
+            app:entries="@array/reminder_names"
+            app:entryValues="@array/reminder_values"
+            app:title="Remind me on screen when something is wrong"
+            app:useSimpleSummaryProvider="true"
+            app:iconSpaceReserved="false" />
         <SwitchPreferenceCompat
             app:key="keep_awake"
             app:defaultValue="true"

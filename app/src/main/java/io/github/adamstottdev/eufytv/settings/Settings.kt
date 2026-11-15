@@ -46,6 +46,14 @@ class Settings(context: Context) {
     val quietAllowsRings get() = prefs.getBoolean("quiet_allow_ring", true)
 
     val localOnly get() = prefs.getBoolean("local_only", true)
+
+    /** Minutes between on-screen reminders while something is wrong; 0 = remind once. */
+    val problemReminderMinutes get() = (prefs.getString("problem_reminder", "30") ?: "30").toIntOrNull() ?: 30
+
+    /** Cameras chosen for pop-ups, or null for all of them (the default). */
+    val watchedCameras: Set<String>? get() = if (prefs.contains(KEY_CAMERAS)) prefs.getStringSet(KEY_CAMERAS, emptySet()) else null
+
+    fun isWatched(serial: String) = watchedCameras?.contains(serial) ?: true
     val keepAwake get() = prefs.getBoolean("keep_awake", true)
 
     fun isQuietNow(now: Calendar = Calendar.getInstance()): Boolean {
@@ -65,5 +73,6 @@ class Settings(context: Context) {
 
     companion object {
         const val KEY_SERVICE_ENABLED = "service_enabled"
+        const val KEY_CAMERAS = "cameras"
     }
 }

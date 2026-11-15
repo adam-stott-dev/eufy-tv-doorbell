@@ -6,14 +6,22 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings as AndroidSettings
+import android.widget.Toast
+import androidx.preference.MultiSelectListPreference
 import androidx.preference.Preference
+import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import io.github.adamstottdev.eufytv.BuildConfig
 import io.github.adamstottdev.eufytv.R
+import io.github.adamstottdev.eufytv.eufy.AccountStore
+import io.github.adamstottdev.eufytv.eufy.BridgeState
+import io.github.adamstottdev.eufytv.eufy.EufyConnection
 import io.github.adamstottdev.eufytv.service.DoorbellService
+import io.github.adamstottdev.eufytv.service.ProblemAlerts
 
 class SettingsFragment : PreferenceFragmentCompat() {
+    private val observer = EufyConnection.Observer { refreshStatus() }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.preferences, rootKey)
@@ -29,11 +37,41 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
         findPreference<Preference>("test_popup_delayed")?.setOnPreferenceClickListener {
             DoorbellService.start(requireContext(), DoorbellService.ACTION_TEST, delayMs = 15_000)
-            android.widget.Toast.makeText(requireContext(), R.string.test_in_15, android.widget.Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), R.string.test_in_15, Toast.LENGTH_LONG).show()
             true
         }
         findPreference<Preference>("battery")?.setOnPreferenceClickListener {
             requestBatteryExemption()
+            true
+        }
+        findPreference<Preference>("account")?.setOnPreferenceClickListener {
+            startActivity(Intent(requireContext(), SignInActivity::class.java))
+            true
+        }
+        findPreference<Preference>("problem")?.setOnPreferenceClickListener {
+            val p = ProblemAlerts.currentProblem(requireContext())
+            if (p?.needsSignIn == true || p == null) startActivity(Intent(requireContext(), SignInActivity::class.java))
+            else EufyConnection.reconnect()
+            true
+        }
+        findPreference<Preference>("live_view")?.setOnPreferenceClickListener {
+            val cams = EufyConnection.cameras
+            val s = Settings(requireContext())
+            val cam = cams.firstOrNull { it.isDoorbell && s.isWatched(it.serial) } ?: cams.firstOrNull()
+            if (cam == null) {
+                Toast.makeText(requireContext(), R.string.live_view_none, Toast.LENGTH_SHORT).show()
+            } else {
+                DoorbellService.start(requireContext(), DoorbellService.ACTION_LIVE, serial = cam.serial)
+            }
+            true
+        }
+        findPreference<SwitchPreferenceCompat>("local_only")?.setOnPreferenceChangeListener { _, _ ->
+            // Reconnect with the new setting once it is saved.
+            view?.post { if (EufyConnection.isRunning) EufyConnection.start(requireContext()) }
+            true
+        }
+        findPreference<MultiSelectListPreference>(Settings.KEY_CAMERAS)?.setOnPreferenceChangeListener { _, _ ->
+            view?.post { refreshStatus() }
             true
         }
         findPreference<Preference>("version")?.summary = BuildConfig.VERSION_NAME
@@ -41,7 +79,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     override fun onResume() {
         super.onResume()
+        EufyConnection.addObserver(observer)
         refreshStatus()
+    }
+
+    override fun onPause() {
+        EufyConnection.removeObserver(observer)
+        super.onPause()
     }
 
     private fun refreshStatus() {
@@ -57,14 +101,52 @@ class SettingsFragment : PreferenceFragmentCompat() {
             else getString(R.string.overlay_missing, pkg)
 
         val pm = ctx.getSystemService(PowerManager::class.java)
-        findPreference<Preference>("test_popup_delayed")?.setOnPreferenceClickListener {
-            DoorbellService.start(requireContext(), DoorbellService.ACTION_TEST, delayMs = 15_000)
-            android.widget.Toast.makeText(requireContext(), R.string.test_in_15, android.widget.Toast.LENGTH_LONG).show()
-            true
-        }
         findPreference<Preference>("battery")?.summary =
             if (pm.isIgnoringBatteryOptimizations(pkg)) getString(R.string.battery_ok)
             else getString(R.string.battery_missing, pkg)
+
+        refreshAccount()
+    }
+
+    private fun refreshAccount() {
+        val ctx = context ?: return
+        val email = AccountStore(ctx).email
+        val state = EufyConnection.state
+        findPreference<Preference>("account")?.summary = when {
+            email == null || state == BridgeState.SignedOut -> getString(R.string.account_signed_out)
+            state is BridgeState.Connected -> getString(R.string.account_connected, email)
+            state is BridgeState.Connecting -> getString(R.string.account_connecting, email)
+            state is BridgeState.Disconnected -> getString(R.string.account_offline, email)
+            else -> getString(R.string.account_action, email)
+        }
+
+        val problem = ProblemAlerts.currentProblem(ctx)
+        findPreference<PreferenceCategory>("problem_category")?.isVisible = problem != null
+        findPreference<Preference>("problem")?.apply {
+            title = problem?.message
+            summary = getString(R.string.problem_fix_it)
+        }
+
+        val cams = EufyConnection.cameras
+        findPreference<MultiSelectListPreference>(Settings.KEY_CAMERAS)?.apply {
+            isEnabled = cams.isNotEmpty()
+            entries = cams.map { if (it.model.isNotBlank()) "${it.name} (${it.model})" else it.name }.toTypedArray()
+            entryValues = cams.map { it.serial }.toTypedArray()
+            val watched = Settings(ctx).watchedCameras
+            if (watched == null && cams.isNotEmpty()) values = cams.map { it.serial }.toSet()
+            summary = when {
+                cams.isEmpty() -> getString(R.string.cameras_none)
+                values.isEmpty() -> getString(R.string.cameras_none_selected)
+                values.containsAll(cams.map { it.serial }) -> getString(R.string.cameras_all)
+                else -> cams.filter { it.serial in values }.joinToString(", ") { it.name }
+            }
+        }
+        findPreference<Preference>("live_view")?.apply {
+            val s = Settings(ctx)
+            val cam = cams.firstOrNull { it.isDoorbell && s.isWatched(it.serial) } ?: cams.firstOrNull()
+            isEnabled = cam != null
+            summary = cam?.name ?: getString(R.string.live_view_none)
+        }
     }
 
     @SuppressLint("BatteryLife")

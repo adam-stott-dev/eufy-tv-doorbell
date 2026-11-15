@@ -35,6 +35,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".settings.SignInActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- Full-screen fallback when the overlay permission is missing,
              and used to wake the TV out of the screensaver. -->
         <activity
@@ -54,6 +59,12 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Keeps a connection to the user's doorbell to show its live video when it rings" />
         </service>
+
+        <!-- Embedded Node.js running the Eufy connection, in its own process so it can be restarted -->
+        <service
+            android:name=".eufy.NodeHostService"
+            android:exported="false"
+            android:process=":node" />
 
         <!-- adb-only test trigger: android.permission.DUMP is held by the shell, not by apps -->
         <receiver

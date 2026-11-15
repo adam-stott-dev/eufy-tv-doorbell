@@ -28,6 +28,13 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      # Bundles the Eufy connection (bridge/) into the app.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: bridge/package-lock.json
+
       - name: Load signing key
         id: signing
         env:

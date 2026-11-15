@@ -1,0 +1,15 @@
+{
+  "name": "eufy-tv-bridge",
+  "private": true,
+  "description": "The Eufy connection that runs inside the app on the TV's embedded Node.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "eufy-security-client": "4.1.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.10"
+  }
+}
