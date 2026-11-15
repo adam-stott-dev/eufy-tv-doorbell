@@ -34,8 +34,8 @@ fi
 termux-wake-lock || true
 pgrep -x sshd >/dev/null || sshd
 
-IP=$(ip -4 addr show wlan0 2>/dev/null | awk '/inet /{sub("/.*","",$2);print $2}')
-[ -z "$IP" ] && IP=$(ip -4 addr show eth0 2>/dev/null | awk '/inet /{sub("/.*","",$2);print $2}')
+IP=$(ip -4 addr show wlan0 2>/dev/null | awk '/inet /{sub("/.*","",$2);print $2}' || true)
+[ -z "$IP" ] && IP=$(ip -4 addr show eth0 2>/dev/null | awk '/inet /{sub("/.*","",$2);print $2}' || true)
 echo
 echo "== Done. From your laptop run:"
 echo "   ssh -p 8022 ${IP:-<shield-ip>}"
