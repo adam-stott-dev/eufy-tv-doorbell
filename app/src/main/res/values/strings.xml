@@ -10,7 +10,8 @@
     <string name="event_ring">Doorbell</string>
     <string name="event_motion">Motion</string>
     <string name="event_person">Person</string>
-    <string name="event_test">Test</string>
+    <string name="event_test">Test pop-up</string>
+    <string name="test_in_15">Test pop-up in 15 seconds. Start the screensaver or open another app to try it.</string>
 
     <string name="popup_connecting">Connecting…</string>
     <string name="popup_no_live_yet">Live video arrives in the next update</string>

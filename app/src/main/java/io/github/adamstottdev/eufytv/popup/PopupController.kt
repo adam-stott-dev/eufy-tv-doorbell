@@ -52,6 +52,8 @@ object PopupController {
         current = event
         durationMs = settings.durationSeconds * 1000L
 
+        Log.i(TAG, "Showing ${event.type} from ${event.deviceName} for ${settings.durationSeconds}s " +
+            "(overlay=${AndroidSettings.canDrawOverlays(app)}, mode=${settings.popupMode}, wake=${settings.wakeScreen})")
         if (settings.wakeScreen) wakeScreen(app)
 
         val label = if (settings.showLabel) labelFor(app, event) else null
@@ -75,6 +77,7 @@ object PopupController {
 
     fun hide() {
         main.removeCallbacks(hideRunnable)
+        if (current != null) Log.i(TAG, "Hiding pop-up")
         feeder?.interrupt()
         feeder = null
         player?.release()
@@ -148,7 +151,14 @@ object PopupController {
         }
 
         val view = buildView(app, event, label)
+        view.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) = Unit
+            override fun onViewDetachedFromWindow(v: View) {
+                if (overlay === v) Log.w(TAG, "Overlay removed by the system")
+            }
+        })
         wm.addView(view, lp)
+        Log.i(TAG, "Overlay added ${lp.width}x${lp.height}")
         overlay = view
         if (s.backCloses) view.requestFocus()
     }
@@ -208,6 +218,6 @@ object PopupController {
             EventType.TEST -> ctx.getString(R.string.event_test)
         }
         val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(e.timeMillis))
-        return "${e.deviceName} · $what · $time"
+        return if (e.type == EventType.TEST) "$what · $time" else "${e.deviceName} · $what · $time"
     }
 }

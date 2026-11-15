@@ -12,6 +12,7 @@
         <Preference app:key="status_overlay" app:title="Show over other apps" app:iconSpaceReserved="false" />
         <Preference app:key="battery" app:title="Battery and standby" app:iconSpaceReserved="false" />
         <Preference app:key="test_popup" app:title="Show a test pop-up" app:summary="Uses your current settings" app:iconSpaceReserved="false" />
+        <Preference app:key="test_popup_delayed" app:title="Show a test pop-up in 15 seconds" app:summary="Time to open another app or start the screensaver first" app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="Eufy account" app:iconSpaceReserved="false">
