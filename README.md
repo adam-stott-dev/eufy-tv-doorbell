@@ -30,6 +30,16 @@ A lightweight background app for Android TV. When your Eufy doorbell rings, or a
    ```
 5. Open **Eufy TV Doorbell** from the apps row, sign in, and choose your settings.
 
+## Testing from a computer
+
+Show the test pop-up without touching the TV (optionally after a delay, so you can start the screensaver or a video first):
+
+```
+adb shell am broadcast -a io.github.adamstottdev.eufytv.TEST_POPUP -n io.github.adamstottdev.eufytv/.service.TestTriggerReceiver --el delay_ms 0
+```
+
+To test with real video, copy a raw `.h264` clip to `/sdcard/Android/data/io.github.adamstottdev.eufytv/files/test.h264`.
+
 ## How it works
 
 Eufy has no official API. The app embeds the open-source [eufy-security-client](https://github.com/bropat/eufy-security-client) library to sign in, receive ring and motion events, and open the livestream from your HomeBase, then decodes the video natively on the TV.
