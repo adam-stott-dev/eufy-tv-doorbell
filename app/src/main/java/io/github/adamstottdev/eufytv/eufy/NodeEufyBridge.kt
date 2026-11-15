@@ -19,6 +19,7 @@ import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.security.SecureRandom
+import java.util.concurrent.Executors
 
 /**
  * [EufyBridge] backed by eufy-security-client running on the embedded Node.js
@@ -78,7 +79,8 @@ class NodeEufyBridge(private val context: Context) : EufyBridge {
         liveSink?.takeIf { it !== sink }?.onStop(null)
         liveSerial = deviceSerial
         liveSink = sink
-        if (!send(JSONObject().put("cmd", "live_start").put("serial", deviceSerial))) {
+        val msg = JSONObject().put("cmd", "live_start").put("serial", deviceSerial)
+        if (!send(msg) { if (liveSink === sink) endLive("Not connected to Eufy") }) {
             endLive("Not connected to Eufy")
         }
     }
@@ -213,22 +215,31 @@ class NodeEufyBridge(private val context: Context) : EufyBridge {
         connection = null
     }
 
-    private fun send(msg: JSONObject): Boolean {
+    /**
+     * Queues a message to Node. Writes happen on their own thread, because callers
+     * include the main thread, where Android forbids network (even loopback) I/O.
+     * Returns false if there is no connection; [onFail] runs if the write fails.
+     */
+    private fun send(msg: JSONObject, onFail: (() -> Unit)? = null): Boolean {
         val o = out ?: return false
-        return try {
-            val bytes = msg.toString().toByteArray(Charsets.UTF_8)
-            synchronized(o) {
-                o.writeByte(T_JSON)
-                o.writeInt(bytes.size)
-                o.write(bytes)
-                o.flush()
+        writer.execute {
+            try {
+                val bytes = msg.toString().toByteArray(Charsets.UTF_8)
+                synchronized(o) {
+                    o.writeByte(T_JSON)
+                    o.writeInt(bytes.size)
+                    o.write(bytes)
+                    o.flush()
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Send failed: ${e.message}")
+                onFail?.invoke()
             }
-            true
-        } catch (e: Exception) {
-            Log.w(TAG, "Send failed: ${e.message}")
-            false
         }
+        return true
     }
+
+    private val writer = Executors.newSingleThreadExecutor { r -> Thread(r, "EufyBridgeWriter").apply { isDaemon = true } }
 
     // ------------------------------------------------------------ messages
 
@@ -302,7 +313,7 @@ class NodeEufyBridge(private val context: Context) : EufyBridge {
     private fun emitState(state: BridgeState) {
         if (state == lastState) return
         lastState = state
-        Log.i(TAG, "State: ${state.javaClass.simpleName}")
+        Log.i(TAG, "State: ${state.toString().substringBefore("(png")}")
         listener?.onState(state)
     }
 
