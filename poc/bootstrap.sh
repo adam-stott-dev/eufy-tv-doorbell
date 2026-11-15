@@ -8,7 +8,9 @@ SRC=/sdcard/Download/eufy-poc
 DEST="$HOME/eufy-poc"
 
 echo "== Updating Termux packages (this takes a few minutes the first time)"
-yes | pkg update -y
+export DEBIAN_FRONTEND=noninteractive
+pkg update -y
+pkg upgrade -y -o Dpkg::Options::=--force-confnew
 pkg install -y nodejs-lts openssh ffmpeg termux-tools
 
 echo "== Copying the proof of concept to $DEST"
