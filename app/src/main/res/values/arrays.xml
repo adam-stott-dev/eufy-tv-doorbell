@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="popup_mode_names">
+        <item>Picture-in-picture</item>
+        <item>Full screen</item>
+    </string-array>
+    <string-array name="popup_mode_values">
+        <item>pip</item>
+        <item>fullscreen</item>
+    </string-array>
+
+    <string-array name="pip_size_names">
+        <item>Small</item>
+        <item>Medium</item>
+        <item>Large</item>
+    </string-array>
+    <string-array name="pip_size_values">
+        <item>small</item>
+        <item>medium</item>
+        <item>large</item>
+    </string-array>
+
+    <string-array name="corner_names">
+        <item>Top left</item>
+        <item>Top right</item>
+        <item>Bottom left</item>
+        <item>Bottom right</item>
+    </string-array>
+    <string-array name="corner_values">
+        <item>top_left</item>
+        <item>top_right</item>
+        <item>bottom_left</item>
+        <item>bottom_right</item>
+    </string-array>
+
+    <string-array name="audio_names">
+        <item>Off</item>
+        <item>On</item>
+        <item>Only for doorbell rings</item>
+    </string-array>
+    <string-array name="audio_values">
+        <item>off</item>
+        <item>on</item>
+        <item>ring_only</item>
+    </string-array>
+
+    <string-array name="show_when_names">
+        <item>Over everything</item>
+        <item>Only when nothing is playing</item>
+    </string-array>
+    <string-array name="show_when_values">
+        <item>always</item>
+        <item>idle_only</item>
+    </string-array>
+
+    <string-array name="cooldown_names">
+        <item>None</item>
+        <item>10 seconds</item>
+        <item>30 seconds</item>
+        <item>1 minute</item>
+        <item>5 minutes</item>
+    </string-array>
+    <string-array name="cooldown_values">
+        <item>0</item>
+        <item>10</item>
+        <item>30</item>
+        <item>60</item>
+        <item>300</item>
+    </string-array>
+
+    <string-array name="hour_names">
+        <item>00:00</item><item>01:00</item><item>02:00</item><item>03:00</item>
+        <item>04:00</item><item>05:00</item><item>06:00</item><item>07:00</item>
+        <item>08:00</item><item>09:00</item><item>10:00</item><item>11:00</item>
+        <item>12:00</item><item>13:00</item><item>14:00</item><item>15:00</item>
+        <item>16:00</item><item>17:00</item><item>18:00</item><item>19:00</item>
+        <item>20:00</item><item>21:00</item><item>22:00</item><item>23:00</item>
+    </string-array>
+    <string-array name="hour_values">
+        <item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item>
+        <item>6</item><item>7</item><item>8</item><item>9</item><item>10</item><item>11</item>
+        <item>12</item><item>13</item><item>14</item><item>15</item><item>16</item><item>17</item>
+        <item>18</item><item>19</item><item>20</item><item>21</item><item>22</item><item>23</item>
+    </string-array>
+</resources>

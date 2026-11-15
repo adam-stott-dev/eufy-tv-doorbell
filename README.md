@@ -15,6 +15,21 @@ A lightweight background app for Android TV. When your Eufy doorbell rings, or a
 - Video stays on your home network (local P2P to the HomeBase).
 - One APK, published automatically on GitHub Releases. Sign in with your Eufy account in the app.
 
+## Install
+
+1. Download the latest `eufy-tv-doorbell-*.apk` from [Releases](https://github.com/adam-stott-dev/eufy-tv-doorbell/releases).
+2. Install it on the TV: `adb install -r eufy-tv-doorbell-*.apk` (or with an app like Downloader).
+3. Let it show over other apps. Android TV has no screen for this, so run once from a computer:
+   ```
+   adb shell appops set io.github.adamstottdev.eufytv SYSTEM_ALERT_WINDOW allow
+   ```
+   Without it, the pop-up opens full screen instead.
+4. Optional, for faster pop-ups after the TV has been asleep:
+   ```
+   adb shell dumpsys deviceidle whitelist +io.github.adamstottdev.eufytv
+   ```
+5. Open **Eufy TV Doorbell** from the apps row, sign in, and choose your settings.
+
 ## How it works
 
 Eufy has no official API. The app embeds the open-source [eufy-security-client](https://github.com/bropat/eufy-security-client) library to sign in, receive ring and motion events, and open the livestream from your HomeBase, then decodes the video natively on the TV.
