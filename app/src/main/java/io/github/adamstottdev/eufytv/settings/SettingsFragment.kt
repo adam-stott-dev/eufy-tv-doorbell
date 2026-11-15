@@ -27,6 +27,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
             DoorbellService.start(requireContext(), DoorbellService.ACTION_TEST)
             true
         }
+        findPreference<Preference>("test_popup_delayed")?.setOnPreferenceClickListener {
+            DoorbellService.start(requireContext(), DoorbellService.ACTION_TEST, delayMs = 15_000)
+            android.widget.Toast.makeText(requireContext(), R.string.test_in_15, android.widget.Toast.LENGTH_LONG).show()
+            true
+        }
         findPreference<Preference>("battery")?.setOnPreferenceClickListener {
             requestBatteryExemption()
             true
@@ -52,6 +57,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
             else getString(R.string.overlay_missing, pkg)
 
         val pm = ctx.getSystemService(PowerManager::class.java)
+        findPreference<Preference>("test_popup_delayed")?.setOnPreferenceClickListener {
+            DoorbellService.start(requireContext(), DoorbellService.ACTION_TEST, delayMs = 15_000)
+            android.widget.Toast.makeText(requireContext(), R.string.test_in_15, android.widget.Toast.LENGTH_LONG).show()
+            true
+        }
         findPreference<Preference>("battery")?.summary =
             if (pm.isIgnoringBatteryOptimizations(pkg)) getString(R.string.battery_ok)
             else getString(R.string.battery_missing, pkg)

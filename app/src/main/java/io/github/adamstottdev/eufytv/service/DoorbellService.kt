@@ -28,6 +28,7 @@ class DoorbellService : Service(), EufyBridge.Listener {
     private lateinit var router: EventRouter
     private var bridge: EufyBridge = NoEufyBridge()
     private var wakeLock: PowerManager.WakeLock? = null
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
 
     override fun onCreate() {
         super.onCreate()
@@ -44,9 +45,13 @@ class DoorbellService : Service(), EufyBridge.Listener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_TEST -> router.onEvent(
-                DoorbellEvent("test", getString(R.string.test_device_name), EventType.TEST)
-            )
+            ACTION_TEST -> {
+                val delayMs = intent.getLongExtra(EXTRA_DELAY_MS, 0L)
+                Log.i(TAG, "Test pop-up in ${delayMs / 1000} s")
+                handler.postDelayed({
+                    router.onEvent(DoorbellEvent("test", getString(R.string.test_device_name), EventType.TEST))
+                }, delayMs)
+            }
             ACTION_STOP -> { stopSelf(); return START_NOT_STICKY }
         }
         return START_STICKY
@@ -98,12 +103,15 @@ class DoorbellService : Service(), EufyBridge.Listener {
         private const val NOTIFICATION_ID = 1
         const val ACTION_TEST = "io.github.adamstottdev.eufytv.TEST_POPUP"
         const val ACTION_STOP = "io.github.adamstottdev.eufytv.STOP"
+        const val EXTRA_DELAY_MS = "delay_ms"
 
         @Volatile var status: String = "stopped"
             private set
 
-        fun start(context: Context, action: String? = null) {
-            val intent = Intent(context, DoorbellService::class.java).setAction(action)
+        fun start(context: Context, action: String? = null, delayMs: Long = 0) {
+            val intent = Intent(context, DoorbellService::class.java)
+                .setAction(action)
+                .putExtra(EXTRA_DELAY_MS, delayMs)
             context.startForegroundService(intent)
         }
 
