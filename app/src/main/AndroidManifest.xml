@@ -55,6 +55,16 @@
                 android:value="Keeps a connection to the user's doorbell to show its live video when it rings" />
         </service>
 
+        <!-- adb-only test trigger: android.permission.DUMP is held by the shell, not by apps -->
+        <receiver
+            android:name=".service.TestTriggerReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP">
+            <intent-filter>
+                <action android:name="io.github.adamstottdev.eufytv.TEST_POPUP" />
+            </intent-filter>
+        </receiver>
+
         <receiver
             android:name=".service.BootReceiver"
             android:exported="true">
