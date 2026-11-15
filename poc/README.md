@@ -67,7 +67,7 @@ The first run asks for the secondary account's email, password and country (GB).
 | 6 | Leave it running 30+ minutes | `LOAD` lines every minute: CPU % and memory |
 | 7 | Turn the TV off (SHIELD goes to sleep), wait 10 minutes, ring | whether `EVENT RING` still arrives and how late |
 
-Recordings, logs and an `.mp4` version of each stream are written to `/sdcard/Download/eufy-poc/out`. Copy them to your laptop with:
+Recordings (raw `.h264`/`.h265`, playable in VLC; an `.mp4` too if you `pkg install ffmpeg`) and logs are written to `/sdcard/Download/eufy-poc/out`. Copy them to your laptop with:
 
 ```bat
 adb pull /sdcard/Download/eufy-poc/out

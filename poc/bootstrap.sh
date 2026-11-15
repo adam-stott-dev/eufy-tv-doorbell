@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # Run inside Termux on the SHIELD:  bash /sdcard/Download/eufy-poc/bootstrap.sh
-# Installs Node.js, ffmpeg and an SSH server, copies the proof of concept into
+# Installs Node.js and an SSH server, copies the proof of concept into
 # Termux's home folder and lets you log in from your laptop with an SSH key.
 set -euo pipefail
 
@@ -11,7 +11,8 @@ echo "== Updating Termux packages (this takes a few minutes the first time)"
 export DEBIAN_FRONTEND=noninteractive
 pkg update -y
 pkg upgrade -y -o Dpkg::Options::=--force-confnew
-pkg install -y nodejs-lts openssh ffmpeg termux-tools
+pkg install -y nodejs-lts openssh termux-tools
+apt clean
 
 echo "== Copying the proof of concept to $DEST"
 mkdir -p "$DEST"
