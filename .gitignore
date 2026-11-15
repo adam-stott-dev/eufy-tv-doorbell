@@ -1,0 +1,22 @@
+# Never commit credentials or recordings
+config.json
+*.pem
+*.jks
+*.keystore
+local.properties
+out/
+*.h264
+*.h265
+*.aac
+*.mp4
+captcha.png
+
+# Node
+node_modules/
+
+# Android / Gradle
+.gradle/
+build/
+.idea/
+*.iml
+.DS_Store
