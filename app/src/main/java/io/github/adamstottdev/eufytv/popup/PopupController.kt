@@ -48,14 +48,15 @@ object PopupController {
 
     fun isShowing(serial: String) = current?.deviceSerial == serial
 
-    fun show(context: Context, event: DoorbellEvent) = main.post {
+    /** Shows the pop-up for [event]; [durationOverrideMs] replaces the user's duration (used by tests). */
+    fun show(context: Context, event: DoorbellEvent, durationOverrideMs: Long? = null) = main.post {
         val app = context.applicationContext
         val settings = Settings(app)
         hide()
         current = event
-        durationMs = settings.durationSeconds * 1000L
+        durationMs = durationOverrideMs ?: (settings.durationSeconds * 1000L)
 
-        Log.i(TAG, "Showing ${event.type} from ${event.deviceName} for ${settings.durationSeconds}s " +
+        Log.i(TAG, "Showing ${event.type} from ${event.deviceName} for ${durationMs / 1000}s " +
             "(overlay=${AndroidSettings.canDrawOverlays(app)}, mode=${settings.popupMode}, wake=${settings.wakeScreen})")
         if (settings.wakeScreen) wakeScreen(app)
 

@@ -30,7 +30,7 @@
             app:iconSpaceReserved="false" />
         <Preference
             app:key="live_view"
-            app:title="Show live view now"
+            app:title="Test live pop-up of chosen cameras"
             app:iconSpaceReserved="false" />
         <SwitchPreferenceCompat
             app:key="local_only"

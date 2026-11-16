@@ -55,14 +55,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
         findPreference<Preference>("live_view")?.setOnPreferenceClickListener {
-            val cams = EufyConnection.cameras
-            val s = Settings(requireContext())
-            val cam = cams.firstOrNull { it.isDoorbell && s.isWatched(it.serial) } ?: cams.firstOrNull()
-            if (cam == null) {
-                Toast.makeText(requireContext(), R.string.live_view_none, Toast.LENGTH_SHORT).show()
-            } else {
-                DoorbellService.start(requireContext(), DoorbellService.ACTION_LIVE, serial = cam.serial)
-            }
+            DoorbellService.start(requireContext(), DoorbellService.ACTION_LIVE_ALL)
             true
         }
         findPreference<SwitchPreferenceCompat>("local_only")?.setOnPreferenceChangeListener { _, _ ->
@@ -148,9 +141,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
         findPreference<Preference>("live_view")?.apply {
             val s = Settings(ctx)
-            val cam = cams.firstOrNull { it.isDoorbell && s.isWatched(it.serial) } ?: cams.firstOrNull()
-            isEnabled = cam != null
-            summary = cam?.name ?: getString(R.string.live_view_none)
+            val chosen = cams.filter { s.isWatched(it.serial) }
+            isEnabled = chosen.isNotEmpty()
+            summary = when {
+                cams.isEmpty() -> getString(R.string.live_view_none)
+                chosen.isEmpty() -> getString(R.string.live_test_none)
+                chosen.size == 1 -> getString(R.string.live_test_one, chosen[0].name)
+                else -> getString(R.string.live_test_many, chosen.joinToString(", ") { it.name })
+            }
         }
     }
 

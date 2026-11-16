@@ -18,6 +18,7 @@ import io.github.adamstottdev.eufytv.eufy.BridgeState
 import io.github.adamstottdev.eufytv.eufy.DoorbellEvent
 import io.github.adamstottdev.eufytv.eufy.EufyConnection
 import io.github.adamstottdev.eufytv.eufy.EventType
+import io.github.adamstottdev.eufytv.popup.PopupController
 import io.github.adamstottdev.eufytv.settings.Settings
 import io.github.adamstottdev.eufytv.settings.SettingsActivity
 
@@ -77,6 +78,7 @@ class DoorbellService : Service() {
                     Log.w(TAG, "No camera for live view (not signed in?)")
                 }
             }
+            ACTION_LIVE_ALL -> testAllCameras()
             ACTION_STOP -> { stopSelf(); return START_NOT_STICKY }
         }
         return START_STICKY
@@ -94,6 +96,28 @@ class DoorbellService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    private val cameraTests = mutableListOf<Runnable>()
+
+    /** Shows the live pop-up of each camera chosen for pop-ups, one after another. */
+    private fun testAllCameras() {
+        cameraTests.forEach { handler.removeCallbacks(it) }
+        cameraTests.clear()
+        val s = Settings(this)
+        val cams = EufyConnection.cameras.filter { s.isWatched(it.serial) }
+        if (cams.isEmpty()) {
+            android.widget.Toast.makeText(this, R.string.live_test_none, android.widget.Toast.LENGTH_LONG).show()
+            return
+        }
+        cams.forEachIndexed { i, cam ->
+            val r = Runnable {
+                Log.i(TAG, "Camera test ${i + 1}/${cams.size}: ${cam.name}")
+                PopupController.show(this, DoorbellEvent(cam.serial, cam.name, EventType.LIVE), CAMERA_TEST_MS)
+            }
+            cameraTests += r
+            handler.postDelayed(r, i * (CAMERA_TEST_MS + 1_500L))
+        }
+    }
 
     private fun onConnectionChanged() {
         val email = AccountStore(this).email ?: ""
@@ -142,6 +166,8 @@ class DoorbellService : Service() {
         const val ACTION_TEST = "io.github.adamstottdev.eufytv.TEST_POPUP"
         const val ACTION_STOP = "io.github.adamstottdev.eufytv.STOP"
         const val ACTION_LIVE = "io.github.adamstottdev.eufytv.LIVE_VIEW"
+        const val ACTION_LIVE_ALL = "io.github.adamstottdev.eufytv.LIVE_VIEW_ALL"
+        private const val CAMERA_TEST_MS = 12_000L
         const val EXTRA_DELAY_MS = "delay_ms"
         const val EXTRA_SERIAL = "serial"
 
