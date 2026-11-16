@@ -253,6 +253,11 @@ function wire(e) {
     });
     e.on("push connect", () => send({ ev: "push", connected: true }));
     e.on("push close", () => send({ ev: "push", connected: false }));
+    // How long Eufy's cloud took to deliver each push (its event_time is when the camera saw it).
+    e.on("push message", (m) => {
+        const t = Number(m && m.event_time);
+        if (t > 0) log("info", `Push ${m.type} for ${m.device_sn || m.station_sn || "?"}, ${Date.now() - (t < 1e12 ? t * 1000 : t)} ms after the camera's event time`);
+    });
     e.on("station connect", (s) => send({ ev: "station", serial: s.getSerial(), name: s.getName(), connected: true }));
     e.on("station close", (s) => send({ ev: "station", serial: s.getSerial(), name: s.getName(), connected: false }));
     e.on("station connection error", (s, err) => log("warn", `P2P error ${s.getName()}: ${err && err.message}`));
