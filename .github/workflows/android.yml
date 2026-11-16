@@ -1,10 +1,20 @@
 name: Android
 
-# Builds and releases only from main. To build another branch, run the workflow
-# by hand from the Actions tab and pick the branch.
+# Builds and releases only from main, and only when something that goes into the
+# APK changes (website and documentation changes don't make a new release).
+# To build another branch, run the workflow by hand from the Actions tab.
 on:
   push:
     branches: [main]
+    paths:
+      - "app/**"
+      - "bridge/**"
+      - "gradle/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
+      - "gradlew"
+      - "gradlew.bat"
+      - ".github/workflows/android.yml"
   workflow_dispatch:
 
 permissions:
