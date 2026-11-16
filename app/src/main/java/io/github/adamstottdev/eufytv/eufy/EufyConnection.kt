@@ -40,6 +40,7 @@ object EufyConnection {
     /** Connects with the saved account, if there is one. */
     fun start(context: Context) {
         val app = context.applicationContext
+        io.github.adamstottdev.eufytv.Diag.init(app)
         if (cameras.isEmpty()) cameras = loadCameras(app)
         val account = AccountStore(app).load()
         if (account == null) {

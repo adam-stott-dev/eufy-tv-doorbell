@@ -21,10 +21,12 @@ class AnnexBPlayer(
     private val hevc: Boolean = false,
     private val paceFps: Int = 0,
     private val onVideoSize: (Int, Int) -> Unit = { _, _ -> },
+    private val onFirstFrame: () -> Unit = {},
 ) {
     private val units = LinkedBlockingQueue<ByteArray>(240)
     private val splitter = NalSplitter { units.put(it) }
     @Volatile private var running = true
+    private var firstShown = false
     private val thread = Thread(::decodeLoop, "AnnexBPlayer").apply { start() }
 
     fun feed(data: ByteArray, offset: Int = 0, length: Int = data.size) {
@@ -124,6 +126,7 @@ class AnnexBPlayer(
                         if (waitMs > 0) Thread.sleep(waitMs)
                     }
                     codec.releaseOutputBuffer(out, true)
+                    if (!firstShown) { firstShown = true; onFirstFrame() }
                 }
             }
         } catch (_: InterruptedException) {

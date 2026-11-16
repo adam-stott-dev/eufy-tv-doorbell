@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Base64
 import android.util.Log
+import io.github.adamstottdev.eufytv.Diag
 import org.json.JSONObject
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
@@ -260,6 +261,7 @@ class NodeEufyBridge(private val context: Context) : EufyBridge {
             )
             "push" -> {
                 pushUp = m.optBoolean("connected")
+                Diag.i(TAG, "Eufy push ${if (pushUp) "connected" else "disconnected"}")
                 if (lastState is BridgeState.Connected) emitState(BridgeState.Connected(pushUp))
             }
             "event" -> {
@@ -270,7 +272,8 @@ class NodeEufyBridge(private val context: Context) : EufyBridge {
                     else -> return
                 }
                 val event = DoorbellEvent(m.optString("serial"), m.optString("name"), type)
-                Log.i(TAG, "Event $type from ${event.deviceName}")
+                val lag = m.optLong("at", 0L).takeIf { it > 0 }?.let { System.currentTimeMillis() - it }
+                Diag.i(TAG, "Event $type from ${event.deviceName}" + (lag?.let { " (bridge to app ${it} ms)" } ?: ""))
                 listener?.onEvent(event)
             }
             "devices" -> {
@@ -281,6 +284,7 @@ class NodeEufyBridge(private val context: Context) : EufyBridge {
                 })
             }
             "live_start" -> {
+                Diag.i(TAG, "Video started: ${m.optString("codec")} ${m.optInt("width")}x${m.optInt("height")}")
                 if (m.optString("serial") != liveSerial) return
                 liveSink?.onStart(
                     m.optString("codec", "h264"),
@@ -291,17 +295,18 @@ class NodeEufyBridge(private val context: Context) : EufyBridge {
                 )
             }
             "live_stop", "live_error" -> {
+                Diag.i(TAG, "Video ${m.optString("ev")}: ${m.optString("message", m.optString("why"))}")
                 if (m.optString("serial") == liveSerial) {
                     endLive(if (m.optString("ev") == "live_error") "Couldn't start the video: ${m.optString("message")}" else "Video ended")
                 }
             }
-            "station" -> Log.i(TAG, "HomeBase ${m.optString("name")} ${if (m.optBoolean("connected")) "connected" else "disconnected"}")
+            "station" -> Diag.i(TAG, "HomeBase ${m.optString("name")} ${if (m.optBoolean("connected")) "connected" else "disconnected"}")
             "log" -> {
                 val msg = "node: ${m.optString("msg")}"
                 when (m.optString("level")) {
                     "error" -> Log.e(TAG, msg)
-                    "warn" -> Log.w(TAG, msg)
-                    else -> Log.i(TAG, msg)
+                    "warn" -> Diag.w(TAG, msg)
+                    else -> Diag.i(TAG, msg)
                 }
             }
         }
@@ -313,7 +318,7 @@ class NodeEufyBridge(private val context: Context) : EufyBridge {
     private fun emitState(state: BridgeState) {
         if (state == lastState) return
         lastState = state
-        Log.i(TAG, "State: ${state.toString().substringBefore("(png")}")
+        Diag.i(TAG, "State: ${state.toString().substringBefore("(png")}")
         listener?.onState(state)
     }
 

@@ -13,6 +13,7 @@ import android.view.Gravity
 import android.view.Surface
 import android.view.View
 import android.view.WindowManager
+import io.github.adamstottdev.eufytv.Diag
 import io.github.adamstottdev.eufytv.R
 import io.github.adamstottdev.eufytv.eufy.DoorbellEvent
 import io.github.adamstottdev.eufytv.eufy.EufyConnection
@@ -69,7 +70,8 @@ object PopupController {
         style = s
         durationMs = durationOverrideMs ?: (s.durationSeconds * 1000L)
 
-        Log.i(TAG, "Showing ${event.type} from ${event.deviceName} for ${durationMs / 1000}s " +
+        Diag.init(app)
+        Diag.i(TAG, "Showing ${event.type} from ${event.deviceName} for ${durationMs / 1000}s " +
             "(overlay=${AndroidSettings.canDrawOverlays(app)}, asleep=$asleep, mode=${s.mode}, wake=${settings.wakeScreen})")
         if (settings.wakeScreen) {
             // A pop-up that replaces one which woke the TV keeps that flag.
@@ -221,6 +223,7 @@ object PopupController {
             Settings.Audio.ON -> true
             Settings.Audio.RING_ONLY -> event.type == EventType.RING || event.type == EventType.LIVE
         }
+        Diag.i(TAG, "Asking for video from ${event.deviceName}")
         val sink = LiveSink(event.deviceSerial, surface, view, audio)
         live = sink
         EufyConnection.startLivestream(event.deviceSerial, sink)
@@ -248,7 +251,8 @@ object PopupController {
             started = true
             video?.release()
             if (width > 0 && height > 0) view.setVideoSize(width, height)
-            video = AnnexBPlayer(surface, hevc = codec == "h265", onVideoSize = view::setVideoSize)
+            video = AnnexBPlayer(surface, hevc = codec == "h265", onVideoSize = view::setVideoSize,
+                onFirstFrame = { Diag.i(TAG, "First picture on screen") })
             sound?.release()
             sound = if (audioOn && hasAudio) AacPlayer() else null
         }
