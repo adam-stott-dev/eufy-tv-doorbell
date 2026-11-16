@@ -25,10 +25,15 @@ class Settings(context: Context) {
 
     /** Pop-up height as a fraction of the screen height (picture-in-picture only). */
     val pipHeightFraction: Float
-        get() = when (prefs.getString("pip_size", "medium")) {
-            "small" -> 0.35f
-            "large" -> 0.70f
-            else -> 0.50f
+        get() = popupSizePercent / 100f
+
+    /** Picture-in-picture height in % of the screen height, set with a slider. */
+    val popupSizePercent: Int
+        get() = if (prefs.contains(KEY_POPUP_SIZE)) prefs.getInt(KEY_POPUP_SIZE, 50).coerceIn(20, 100)
+        else when (prefs.getString("pip_size", "medium")) { // the older Small/Medium/Large choice
+            "small" -> 35
+            "large" -> 70
+            else -> 50
         }
 
     val durationSeconds get() = prefs.getInt("popup_duration", 30).coerceIn(5, 300)
@@ -74,5 +79,6 @@ class Settings(context: Context) {
     companion object {
         const val KEY_SERVICE_ENABLED = "service_enabled"
         const val KEY_CAMERAS = "cameras"
+        const val KEY_POPUP_SIZE = "popup_size"
     }
 }

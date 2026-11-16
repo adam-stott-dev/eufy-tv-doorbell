@@ -74,6 +74,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
             view?.post { refreshStatus() }
             true
         }
+        findPreference<androidx.preference.SeekBarPreference>(Settings.KEY_POPUP_SIZE)?.apply {
+            // Carry over the older Small/Medium/Large choice.
+            value = Settings(requireContext()).popupSizePercent
+            updatesContinuously = false
+        }
         findPreference<Preference>("version")?.summary = BuildConfig.VERSION_NAME
     }
 

@@ -104,13 +104,15 @@
             app:title="Style"
             app:useSimpleSummaryProvider="true"
             app:iconSpaceReserved="false" />
-        <ListPreference
-            app:key="pip_size"
-            app:defaultValue="medium"
-            app:entries="@array/pip_size_names"
-            app:entryValues="@array/pip_size_values"
+        <SeekBarPreference
+            app:key="popup_size"
+            app:defaultValue="50"
+            app:min="20"
+            android:max="100"
+            app:seekBarIncrement="5"
+            app:showSeekBarValue="true"
             app:title="Picture-in-picture size"
-            app:useSimpleSummaryProvider="true"
+            app:summary="Height as % of the screen. Use left and right on the remote."
             app:iconSpaceReserved="false" />
         <ListPreference
             app:key="pip_corner"

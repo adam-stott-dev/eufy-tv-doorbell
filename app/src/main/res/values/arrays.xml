@@ -9,16 +9,6 @@
         <item>fullscreen</item>
     </string-array>
 
-    <string-array name="pip_size_names">
-        <item>Small</item>
-        <item>Medium</item>
-        <item>Large</item>
-    </string-array>
-    <string-array name="pip_size_values">
-        <item>small</item>
-        <item>medium</item>
-        <item>large</item>
-    </string-array>
 
     <string-array name="corner_names">
         <item>Top left</item>
