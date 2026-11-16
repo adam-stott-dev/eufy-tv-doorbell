@@ -8,7 +8,7 @@ order: 1
 
 ## What you need
 
-- An Android TV or Google TV box running Android 8.0 or later. The app is built for 64-bit ARM (arm64-v8a), which covers the NVIDIA SHIELD TV, Chromecast with Google TV and most current boxes.
+- An Android TV or Google TV box running Android 8.0 or later. The app is built for 64-bit ARM (arm64-v8a), such as the NVIDIA SHIELD TV. Many cheaper boxes and the Chromecast with Google TV run 32-bit Android and can't install it. To check, run `adb shell getprop ro.product.cpu.abi`: it must say `arm64-v8a`.
 - A Eufy doorbell or camera that works in the Eufy Security app. It has been tested with a Video Doorbell E340 on a HomeBase S380.
 - A computer with [adb](https://developer.android.com/tools/releases/platform-tools) for two one-off commands. You can install the app without a computer, but letting it show on top of other apps needs adb once.
 
@@ -59,7 +59,7 @@ adb shell dumpsys deviceidle whitelist +io.github.adamstottdev.eufytv
 
 If a pop-up wakes the TV, the app can put it back to sleep afterwards. Android only allows this through an accessibility service, which you turn on once. It only puts the TV to sleep and reads nothing on screen.
 
-On the TV: **Settings > Device Preferences > Accessibility > Eufy TV Doorbell sleep**, turn it on. Or from a computer, if you use no other accessibility services:
+On the TV: **Settings > Device Preferences > Accessibility > Eufy TV Doorbell sleep**, turn it on. Or from a computer, but only if `adb shell settings get secure enabled_accessibility_services` prints `null` or nothing (otherwise this switches your other accessibility services off):
 
 ```
 adb shell settings put secure enabled_accessibility_services io.github.adamstottdev.eufytv/.service.SleepService

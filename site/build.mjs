@@ -285,7 +285,7 @@ function landing(app, releases, docs) {
   const { download, changelog } = releaseBlocks(releases);
   const pkg = app.packageName;
   const req = [`Android TV or Google TV, Android ${app.minAndroid} or later`];
-  if (app.abis.length) req.push(`${app.abis.includes("arm64-v8a") && app.abis.length === 1 ? "64-bit ARM" : app.abis.join(", ")} (SHIELD TV, Chromecast with Google TV and most current boxes)`);
+  if (app.abis.length) req.push(`${app.abis.includes("arm64-v8a") && app.abis.length === 1 ? "64-bit ARM" : app.abis.join(", ")} (such as the SHIELD TV)`);
   req.push("A Eufy doorbell or camera, signed in with an email and password");
   const guide = docs.filter((d) => d.section === "Guide");
 

@@ -1,5 +1,7 @@
 # Proof of concept on the SHIELD (Termux)
 
+> **History only.** This is the test run from before the app existed. You don't need Termux or anything in this folder to use the app.
+
 Before building the app, this checks on the real hardware that we can:
 
 1. log in to Eufy with a secondary account,

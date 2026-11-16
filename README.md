@@ -6,11 +6,11 @@ A lightweight background app for Android TV. When your Eufy doorbell rings, or a
 
 > **Status: early.** Tested on an NVIDIA SHIELD TV with a Eufy Video Doorbell E340 and HomeBase S380. See the [plan](docs/PLAN.md) and the [proof of concept results](docs/POC-RESULTS.md).
 >
-> Needs a 64-bit ARM TV box (arm64-v8a), such as the SHIELD TV, Chromecast with Google TV or most current boxes.
+> Needs a 64-bit ARM TV box (arm64-v8a), such as the SHIELD TV. Many cheaper boxes and the Chromecast with Google TV run 32-bit Android and can't install it. Check first with `adb shell getprop ro.product.cpu.abi`: it must say `arm64-v8a`.
 
 ## Features
 
-- Pop-up on ring, motion or person detection, per camera.
+- Pop-up on ring, motion or person detection, for the camera you choose.
 - Picture-in-picture (size and corner of your choice) or full screen, set separately for when the TV is on and when the pop-up wakes it (full screen by default).
 - Shows over apps, the home screen and the screensaver; can wake the TV, and put it back to sleep afterwards if the pop-up woke it.
 - Configurable duration, audio, quiet hours and cooldown.
@@ -32,10 +32,14 @@ A lightweight background app for Android TV. When your Eufy doorbell rings, or a
    ```
 5. Optional, so the TV goes back to sleep after a pop-up that woke it (select **Allow putting the TV to sleep** in the app's settings and turn it on, or run):
    ```
+   adb shell settings get secure enabled_accessibility_services
+   ```
+   If that prints `null` or nothing, run the two lines below. If it lists other services, add `:io.github.adamstottdev.eufytv/.service.SleepService` to the end of that list instead, or the others get switched off.
+   ```
    adb shell settings put secure enabled_accessibility_services io.github.adamstottdev.eufytv/.service.SleepService
    adb shell settings put secure accessibility_enabled 1
    ```
-   This turns on a small accessibility service that only puts the TV to sleep; it reads nothing on screen. If you already use other accessibility services, add it to the list (separated by `:`) instead of replacing it, or turn it on in **Settings > Accessibility**.
+   This turns on a small accessibility service that only puts the TV to sleep; it reads nothing on screen. Easier: turn on **Eufy TV Doorbell sleep** in **Settings > Device Preferences > Accessibility**.
 6. Open **Eufy TV Doorbell** from the apps row, choose **Eufy account** and sign in: scan the QR code with your phone and enter your details there (it's one-time, home network only, and encrypted on the phone), or type them on the TV. Then choose your settings.
 
 If anything stops the pop-ups working later (Eufy signs you out, a verification code is needed, the connection drops for more than a few minutes), a red message appears on screen and repeats until it's fixed. You can change how often in **Advanced**.
@@ -61,6 +65,10 @@ Eufy has no official API. The app embeds the open-source [eufy-security-client](
 Your Eufy password stays on the TV, encrypted with a key held by the Android Keystore, and is only sent to Eufy.
 
 Use a **secondary Eufy account** with your cameras shared to it. Signing in with your main account elsewhere can log your phone app out.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE). The app bundles other open-source software, listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## Not affiliated
 
