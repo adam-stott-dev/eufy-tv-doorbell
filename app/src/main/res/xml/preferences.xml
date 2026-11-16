@@ -24,13 +24,13 @@
             app:key="account"
             app:title="Eufy account"
             app:iconSpaceReserved="false" />
-        <MultiSelectListPreference
-            app:key="cameras"
-            app:title="Cameras that pop up"
+        <ListPreference
+            app:key="popup_camera"
+            app:title="Camera that pops up"
             app:iconSpaceReserved="false" />
         <Preference
             app:key="live_view"
-            app:title="Test live pop-up of chosen cameras"
+            app:title="Test the live pop-up"
             app:iconSpaceReserved="false" />
         <SwitchPreferenceCompat
             app:key="local_only"

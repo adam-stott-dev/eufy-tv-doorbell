@@ -7,7 +7,7 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings as AndroidSettings
 import android.widget.Toast
-import androidx.preference.MultiSelectListPreference
+import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
@@ -63,7 +63,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             view?.post { if (EufyConnection.isRunning) EufyConnection.start(requireContext()) }
             true
         }
-        findPreference<MultiSelectListPreference>(Settings.KEY_CAMERAS)?.setOnPreferenceChangeListener { _, _ ->
+        findPreference<ListPreference>(Settings.KEY_CAMERA)?.setOnPreferenceChangeListener { _, _ ->
             view?.post { refreshStatus() }
             true
         }
@@ -126,29 +126,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         val cams = EufyConnection.cameras
-        findPreference<MultiSelectListPreference>(Settings.KEY_CAMERAS)?.apply {
+        val chosen = cams.firstOrNull { it.serial == Settings(ctx).popupCamera }
+        findPreference<ListPreference>(Settings.KEY_CAMERA)?.apply {
             isEnabled = cams.isNotEmpty()
             entries = cams.map { if (it.model.isNotBlank()) "${it.name} (${it.model})" else it.name }.toTypedArray()
             entryValues = cams.map { it.serial }.toTypedArray()
-            val watched = Settings(ctx).watchedCameras
-            if (watched == null && cams.isNotEmpty()) values = cams.map { it.serial }.toSet()
-            summary = when {
-                cams.isEmpty() -> getString(R.string.cameras_none)
-                values.isEmpty() -> getString(R.string.cameras_none_selected)
-                values.containsAll(cams.map { it.serial }) -> getString(R.string.cameras_all)
-                else -> cams.filter { it.serial in values }.joinToString(", ") { it.name }
-            }
+            if (chosen != null && value != chosen.serial) value = chosen.serial
+            summary = chosen?.name ?: getString(R.string.cameras_none)
         }
         findPreference<Preference>("live_view")?.apply {
-            val s = Settings(ctx)
-            val chosen = cams.filter { s.isWatched(it.serial) }
-            isEnabled = chosen.isNotEmpty()
-            summary = when {
-                cams.isEmpty() -> getString(R.string.live_view_none)
-                chosen.isEmpty() -> getString(R.string.live_test_none)
-                chosen.size == 1 -> getString(R.string.live_test_one, chosen[0].name)
-                else -> getString(R.string.live_test_many, chosen.joinToString(", ") { it.name })
-            }
+            isEnabled = chosen != null
+            summary = if (chosen != null) getString(R.string.live_test_one, chosen.name) else getString(R.string.live_view_none)
         }
     }
 

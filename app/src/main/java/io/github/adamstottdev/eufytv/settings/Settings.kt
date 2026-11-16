@@ -3,6 +3,7 @@ package io.github.adamstottdev.eufytv.settings
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
+import io.github.adamstottdev.eufytv.eufy.EufyConnection
 import java.util.Calendar
 
 /** Typed access to everything the user can change on the settings screen. */
@@ -55,10 +56,15 @@ class Settings(context: Context) {
     /** Minutes between on-screen reminders while something is wrong; 0 = remind once. */
     val problemReminderMinutes get() = (prefs.getString("problem_reminder", "30") ?: "30").toIntOrNull() ?: 30
 
-    /** Cameras chosen for pop-ups, or null for all of them (the default). */
-    val watchedCameras: Set<String>? get() = if (prefs.contains(KEY_CAMERAS)) prefs.getStringSet(KEY_CAMERAS, emptySet()) else null
+    /**
+     * The one camera that pops up. Until the user picks one, the doorbell (or
+     * the first camera if there is no doorbell).
+     */
+    val popupCamera: String?
+        get() = prefs.getString(KEY_CAMERA, null)
+            ?: EufyConnection.cameras.let { cams -> (cams.firstOrNull { it.isDoorbell } ?: cams.firstOrNull())?.serial }
 
-    fun isWatched(serial: String) = watchedCameras?.contains(serial) ?: true
+    fun isWatched(serial: String) = serial == popupCamera
     val keepAwake get() = prefs.getBoolean("keep_awake", true)
 
     fun isQuietNow(now: Calendar = Calendar.getInstance()): Boolean {
@@ -78,7 +84,7 @@ class Settings(context: Context) {
 
     companion object {
         const val KEY_SERVICE_ENABLED = "service_enabled"
-        const val KEY_CAMERAS = "cameras"
+        const val KEY_CAMERA = "popup_camera"
         const val KEY_POPUP_SIZE = "popup_size"
     }
 }
