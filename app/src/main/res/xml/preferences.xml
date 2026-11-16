@@ -111,8 +111,8 @@
             android:max="100"
             app:seekBarIncrement="5"
             app:showSeekBarValue="true"
-            app:title="Picture-in-picture size"
-            app:summary="Height as % of the screen. Use left and right on the remote."
+            app:title="Pop-up size"
+            app:summary="How tall the pop-up is, as % of the screen. Select it, then use left and right on the remote."
             app:iconSpaceReserved="false" />
         <ListPreference
             app:key="pip_corner"
