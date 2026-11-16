@@ -4,7 +4,7 @@ Pop up your Eufy doorbell's live video on Android TV when someone rings or motio
 
 A lightweight background app for Android TV. When your Eufy doorbell rings, or a Eufy camera sees motion, the live view appears on top of whatever is on screen (including the screensaver), then hides itself after a while. No extra hardware: everything runs on the TV box.
 
-> **Status: early.** Tested on an NVIDIA SHIELD TV with a Eufy Video Doorbell E340 and HomeBase S380. See the [plan](docs/PLAN.md) and the [proof of concept results](docs/POC-RESULTS.md).
+> **Status: early.** Tested on an NVIDIA SHIELD TV with a Eufy Video Doorbell E340 and HomeBase S380. See the [plan](docs/PLAN.md).
 >
 > Needs a 64-bit ARM TV box (arm64-v8a), such as the SHIELD TV. Many cheaper boxes and the Chromecast with Google TV run 32-bit Android and can't install it. Check first with `adb shell getprop ro.product.cpu.abi`: it must say `arm64-v8a`.
 

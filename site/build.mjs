@@ -1,7 +1,7 @@
 // Builds the project website into site/_site.
 //
 // Everything that can change with the app is read from the repository at build time:
-//   - user guide pages from docs/guide/*.md, plus docs/PLAN.md and docs/POC-RESULTS.md
+//   - user guide pages from docs/guide/*.md, plus docs/PLAN.md
 //   - package name, minimum Android version and CPU types from app/build.gradle.kts
 //   - the latest releases (version, APK, changelog) from the GitHub API
 // The landing page also refreshes the release details in the browser, so a new
@@ -161,7 +161,6 @@ function loadDocs() {
 
   const background = [
     { src: "docs/PLAN.md", slug: "plan", title: "Project plan", summary: "Goals, design and how the app is put together." },
-    { src: "docs/POC-RESULTS.md", slug: "poc-results", title: "Proof of concept", summary: "Measurements from the first test on a SHIELD TV." },
   ]
     .filter((d) => existsSync(join(root, d.src)))
     .map((d) => ({ ...d, section: "Background", body: parseFrontMatter(read(d.src)).body }));
