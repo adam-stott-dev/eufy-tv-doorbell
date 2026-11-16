@@ -228,8 +228,7 @@
             <Preference app:key="status_service" app:title="Background service" app:iconSpaceReserved="false" />
             <Preference app:key="status_overlay" app:title="Show over other apps" app:iconSpaceReserved="false" />
             <Preference app:key="battery" app:title="Battery and standby" app:iconSpaceReserved="false" />
-            <Preference app:key="live_view" app:title="Test the live pop-up" app:iconSpaceReserved="false" />
-            <Preference app:key="test_popup" app:title="Show a test pop-up" app:summary="Uses your current settings" app:iconSpaceReserved="false" />
+            <Preference app:key="test_popup" app:title="Show a test pop-up" app:iconSpaceReserved="false" />
             <Preference app:key="test_popup_delayed" app:title="Show a test pop-up in 15 seconds" app:summary="Time to open another app, start the screensaver or put the TV to sleep first" app:iconSpaceReserved="false" />
         </PreferenceScreen>
 

@@ -78,10 +78,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
             else EufyConnection.reconnect()
             true
         }
-        findPreference<Preference>("live_view")?.setOnPreferenceClickListener {
-            DoorbellService.start(requireContext(), DoorbellService.ACTION_LIVE_ALL)
-            true
-        }
         findPreference<SwitchPreferenceCompat>("local_only")?.setOnPreferenceChangeListener { _, _ ->
             // Reconnect with the new setting once it is saved.
             view?.post { if (EufyConnection.isRunning) EufyConnection.start(requireContext()) }
@@ -180,10 +176,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
             if (chosen != null && value != chosen.serial) value = chosen.serial
             summary = chosen?.name ?: getString(R.string.cameras_none)
         }
-        findPreference<Preference>("live_view")?.apply {
-            isEnabled = chosen != null
-            summary = if (chosen != null) getString(R.string.live_test_one, chosen.name) else getString(R.string.live_view_none)
-        }
+        val live = chosen != null && email != null
+        findPreference<Preference>("test_popup")?.summary =
+            if (live) getString(R.string.test_live, chosen!!.name) else getString(R.string.test_signed_out)
     }
 
     @SuppressLint("BatteryLife")

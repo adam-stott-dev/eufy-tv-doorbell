@@ -17,7 +17,9 @@
     <string name="popup_not_signed_in">Sign in to Eufy in the app to see live video</string>
     <string name="event_live">Live view</string>
     <string name="popup_no_video">The camera didn\'t send any video. Its HomeBase may be busy or out of reach; try again in a moment.</string>
-    <string name="popup_test_no_video">Test pop-up\n\nTo test with real video, copy a .h264 clip to\nAndroid/data/io.github.adamstottdev.eufytv/files/test.h264</string>
+    <string name="popup_test_no_video">Test pop-up
+
+Sign in to your Eufy account to see your camera here.</string>
 
     <string name="overlay_granted">Allowed: the pop-up shows on top of everything</string>
     <string name="overlay_missing">Not allowed yet, so the pop-up opens full screen instead. From a computer run:\nadb shell appops set %1$s SYSTEM_ALERT_WINDOW allow</string>
@@ -62,9 +64,6 @@
     <string name="account_action">%1$s · needs you to sign in again</string>
     <string name="account_offline">%1$s · not connected, retrying</string>
     <string name="cameras_none">Sign in to see your cameras</string>
-    <string name="live_view_none">Sign in first</string>
-    <string name="live_test_none">Choose a camera under "Camera that pops up"</string>
-    <string name="live_test_one">Shows %1$s live for 12 seconds</string>
 
     <!-- Problems shown on screen -->
     <string name="problem_sign_in_failed">Eufy TV Doorbell: Eufy signed you out (%1$s). Open Eufy TV Doorbell to sign in again. Doorbell pop-ups are off until then.</string>
@@ -79,4 +78,6 @@
     <string name="sleep_permission_adb">Turn on \"Eufy TV Doorbell sleep\" in Settings, Accessibility.</string>
     <string name="sleep_service_label">Eufy TV Doorbell sleep</string>
     <string name="sleep_service_description">Puts the TV back to sleep after a doorbell pop-up woke it. It does not read anything on screen.</string>
+    <string name="test_live">Shows %1$s live, with your current settings</string>
+    <string name="test_signed_out">Sign in to see your camera. Until then it shows an empty pop-up.</string>
 </resources>

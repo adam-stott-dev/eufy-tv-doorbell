@@ -42,18 +42,16 @@ If anything stops the pop-ups working later (Eufy signs you out, a verification 
 
 ## Testing from a computer
 
-Show the test pop-up without touching the TV (optionally after a delay, so you can start the screensaver or a video first):
+Show the test pop-up (your chosen camera, live) without touching the TV, optionally after a delay so you can start the screensaver or a video first:
 
 ```
 adb shell am broadcast -a io.github.adamstottdev.eufytv.TEST_POPUP -n io.github.adamstottdev.eufytv/.service.TestTriggerReceiver --el delay_ms 0
 ```
 
-To test with real video, copy a raw `.h264` clip to `/sdcard/Android/data/io.github.adamstottdev.eufytv/files/test.h264`.
-
-Open the doorbell's live view the same way (or `--es live <camera serial>` for another camera):
+For another camera, add `--es live <camera serial>`:
 
 ```
-adb shell am broadcast -a io.github.adamstottdev.eufytv.TEST_POPUP -n io.github.adamstottdev.eufytv/.service.TestTriggerReceiver --es live doorbell
+adb shell am broadcast -a io.github.adamstottdev.eufytv.TEST_POPUP -n io.github.adamstottdev.eufytv/.service.TestTriggerReceiver --es live <camera serial>
 ```
 
 ## How it works

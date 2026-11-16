@@ -10,8 +10,8 @@ import android.content.Intent
  *   adb shell am broadcast -a io.github.adamstottdev.eufytv.TEST_POPUP \
  *       -n io.github.adamstottdev.eufytv/.service.TestTriggerReceiver --el delay_ms 0
  *
- * Add `--es live doorbell` (or `--es live <camera serial>`) to open the camera's
- * live view instead of the test clip.
+ * Like the settings button, this shows the chosen camera live (or an empty
+ * pop-up before signing in). Add `--es live <camera serial>` for another camera.
  *
  * Protected by android.permission.DUMP, which adb's shell has and normal apps cannot get.
  */

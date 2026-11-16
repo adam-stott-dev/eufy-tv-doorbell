@@ -62,9 +62,7 @@ class DoorbellService : Service() {
             ACTION_TEST -> {
                 val delayMs = intent.getLongExtra(EXTRA_DELAY_MS, 0L)
                 Log.i(TAG, "Test pop-up in ${delayMs / 1000} s")
-                handler.postDelayed({
-                    router.onEvent(DoorbellEvent("test", getString(R.string.test_device_name), EventType.TEST))
-                }, delayMs)
+                handler.postDelayed({ router.onEvent(testEvent()) }, delayMs)
             }
             ACTION_LIVE -> {
                 val serial = intent.getStringExtra(EXTRA_SERIAL)
@@ -78,7 +76,6 @@ class DoorbellService : Service() {
                     Log.w(TAG, "No camera for live view (not signed in?)")
                 }
             }
-            ACTION_LIVE_ALL -> testAllCameras()
             ACTION_STOP -> { stopSelf(); return START_NOT_STICKY }
         }
         return START_STICKY
@@ -97,25 +94,14 @@ class DoorbellService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private val cameraTests = mutableListOf<Runnable>()
-
-    /** Shows the live pop-up of each camera chosen for pop-ups, one after another. */
-    private fun testAllCameras() {
-        cameraTests.forEach { handler.removeCallbacks(it) }
-        cameraTests.clear()
-        val s = Settings(this)
-        val cams = EufyConnection.cameras.filter { s.isWatched(it.serial) }
-        if (cams.isEmpty()) {
-            android.widget.Toast.makeText(this, R.string.live_test_none, android.widget.Toast.LENGTH_LONG).show()
-            return
-        }
-        cams.forEachIndexed { i, cam ->
-            val r = Runnable {
-                Log.i(TAG, "Camera test ${i + 1}/${cams.size}: ${cam.name}")
-                PopupController.show(this, DoorbellEvent(cam.serial, cam.name, EventType.LIVE), CAMERA_TEST_MS)
-            }
-            cameraTests += r
-            handler.postDelayed(r, i * (CAMERA_TEST_MS + 1_500L))
+    /** The chosen camera's live view, or an empty test pop-up before signing in. */
+    private fun testEvent(): DoorbellEvent {
+        val serial = Settings(this).popupCamera
+        val name = serial?.let { EufyConnection.cameraName(it) }
+        return if (serial != null && name != null && AccountStore(this).email != null) {
+            DoorbellEvent(serial, name, EventType.LIVE)
+        } else {
+            DoorbellEvent("test", getString(R.string.test_device_name), EventType.TEST)
         }
     }
 
@@ -166,8 +152,6 @@ class DoorbellService : Service() {
         const val ACTION_TEST = "io.github.adamstottdev.eufytv.TEST_POPUP"
         const val ACTION_STOP = "io.github.adamstottdev.eufytv.STOP"
         const val ACTION_LIVE = "io.github.adamstottdev.eufytv.LIVE_VIEW"
-        const val ACTION_LIVE_ALL = "io.github.adamstottdev.eufytv.LIVE_VIEW_ALL"
-        private const val CAMERA_TEST_MS = 12_000L
         const val EXTRA_DELAY_MS = "delay_ms"
         const val EXTRA_SERIAL = "serial"
 

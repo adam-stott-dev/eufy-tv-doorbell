@@ -20,7 +20,6 @@ import io.github.adamstottdev.eufytv.eufy.EventType
 import io.github.adamstottdev.eufytv.eufy.LiveStreamSink
 import io.github.adamstottdev.eufytv.service.SleepService
 import io.github.adamstottdev.eufytv.settings.Settings
-import java.io.File
 import java.text.DateFormat
 import java.util.Date
 
@@ -214,28 +213,7 @@ object PopupController {
 
     private fun startVideo(ctx: Context, event: DoorbellEvent, view: PopupView, surface: Surface) {
         if (event.type == EventType.TEST) {
-            val file = File(ctx.getExternalFilesDir(null), "test.h264")
-            if (!file.exists()) {
-                view.showMessage(ctx.getString(R.string.popup_test_no_video))
-                return
-            }
-            val p = AnnexBPlayer(surface, paceFps = 15, onVideoSize = view::setVideoSize)
-            player = p
-            feeder = Thread({
-                try {
-                    file.inputStream().use { input ->
-                        val buf = ByteArray(16 * 1024)
-                        while (!Thread.currentThread().isInterrupted) {
-                            val n = input.read(buf)
-                            if (n < 0) break
-                            p.feed(buf, 0, n)
-                        }
-                    }
-                } catch (_: InterruptedException) {
-                } catch (e: Exception) {
-                    Log.w(TAG, "Test video failed", e)
-                }
-            }, "TestVideoFeeder").apply { start() }
+            view.showMessage(ctx.getString(R.string.popup_test_no_video))
             return
         }
         val audio = when ((style ?: Settings(ctx).style(asleep = false)).audio) {
