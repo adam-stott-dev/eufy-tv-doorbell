@@ -16,6 +16,7 @@
     <string name="popup_connecting">Connecting…</string>
     <string name="popup_not_signed_in">Sign in to Eufy in the app to see live video</string>
     <string name="event_live">Live view</string>
+    <string name="popup_no_video">The camera didn\'t send any video. Its HomeBase may be busy or out of reach; try again in a moment.</string>
     <string name="popup_test_no_video">Test pop-up\n\nTo test with real video, copy a .h264 clip to\nAndroid/data/io.github.adamstottdev.eufytv/files/test.h264</string>
 
     <string name="overlay_granted">Allowed: the pop-up shows on top of everything</string>

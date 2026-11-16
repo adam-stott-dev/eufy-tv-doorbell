@@ -212,6 +212,10 @@ object PopupController {
         val sink = LiveSink(event.deviceSerial, surface, view, audio)
         live = sink
         EufyConnection.startLivestream(event.deviceSerial, sink)
+        // Say so if the camera never sends video, rather than "Connecting…" forever.
+        main.postDelayed({
+            if (live === sink && !sink.started) view.showMessage(ctx.getString(R.string.popup_no_video))
+        }, 12_000L)
     }
 
     /** Receives the camera's livestream and plays it in the pop-up. */
@@ -224,9 +228,12 @@ object PopupController {
         @Volatile private var video: AnnexBPlayer? = null
         @Volatile private var sound: AacPlayer? = null
         @Volatile private var released = false
+        @Volatile var started = false
+            private set
 
         override fun onStart(codec: String, width: Int, height: Int, fps: Int, hasAudio: Boolean) {
             if (released) return
+            started = true
             video?.release()
             if (width > 0 && height > 0) view.setVideoSize(width, height)
             video = AnnexBPlayer(surface, hevc = codec == "h265", onVideoSize = view::setVideoSize)
