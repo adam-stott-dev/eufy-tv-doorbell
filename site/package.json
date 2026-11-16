@@ -1,0 +1,12 @@
+{
+  "name": "eufy-tv-doorbell-site",
+  "private": true,
+  "type": "module",
+  "description": "Builds the project website from the repository's docs and app settings.",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "marked": "15.0.12"
+  }
+}
