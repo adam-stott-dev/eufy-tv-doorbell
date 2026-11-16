@@ -1,7 +1,8 @@
 name: Android
 
+# Builds and releases only from main. To build another branch, run the workflow
+# by hand from the Actions tab and pick the branch.
 on:
-  pull_request:
   push:
     branches: [main]
   workflow_dispatch:
