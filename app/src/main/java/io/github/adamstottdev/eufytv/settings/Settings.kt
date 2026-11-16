@@ -3,6 +3,7 @@ package io.github.adamstottdev.eufytv.settings
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
+import io.github.adamstottdev.eufytv.eufy.EufyConnection
 import java.util.Calendar
 
 /** Typed access to everything the user can change on the settings screen. */
@@ -20,24 +21,58 @@ class Settings(context: Context) {
     val triggerMotion get() = prefs.getBoolean("trigger_motion", true)
     val triggerPerson get() = prefs.getBoolean("trigger_person", true)
 
-    val popupMode get() = enumPref("popup_mode", PopupMode.PIP)
-    val corner get() = enumPref("pip_corner", Corner.TOP_RIGHT)
+    /** How a pop-up looks; there is one set for when the TV is on and one for when the pop-up wakes it. */
+    data class Style(
+        val mode: PopupMode,
+        /** Pop-up height as a fraction of the screen height (picture-in-picture only). */
+        val heightFraction: Float,
+        val corner: Corner,
+        val durationSeconds: Int,
+        val audio: Audio,
+    )
 
-    /** Pop-up height as a fraction of the screen height (picture-in-picture only). */
-    val pipHeightFraction: Float
-        get() = when (prefs.getString("pip_size", "medium")) {
-            "small" -> 0.35f
-            "large" -> 0.70f
-            else -> 0.50f
+    /** The style to use, depending on whether the TV was asleep when the event came in. */
+    fun style(asleep: Boolean): Style = if (!asleep) Style(
+        mode = enumPref("popup_mode", PopupMode.PIP),
+        heightFraction = popupSizePercent / 100f,
+        corner = enumPref("pip_corner", Corner.TOP_RIGHT),
+        durationSeconds = prefs.getInt("popup_duration", 30).coerceIn(5, 300),
+        audio = enumPref("audio", Audio.RING_ONLY),
+    ) else Style(
+        mode = enumPref(ASLEEP + "popup_mode", PopupMode.FULLSCREEN),
+        heightFraction = prefs.getInt(ASLEEP + KEY_POPUP_SIZE, popupSizePercent).coerceIn(20, 100) / 100f,
+        corner = enumPref(ASLEEP + "pip_corner", enumPref("pip_corner", Corner.TOP_RIGHT)),
+        durationSeconds = prefs.getInt(ASLEEP + "popup_duration", prefs.getInt("popup_duration", 30)).coerceIn(5, 300),
+        audio = enumPref(ASLEEP + "audio", enumPref("audio", Audio.RING_ONLY)),
+    )
+
+    /** Starts the "TV asleep" size, position, time and sound from the "TV on" ones, the first time. */
+    fun seedAsleepStyle() {
+        if (prefs.contains(ASLEEP + "popup_duration")) return
+        val on = style(asleep = false)
+        prefs.edit()
+            .putInt(ASLEEP + KEY_POPUP_SIZE, popupSizePercent)
+            .putString(ASLEEP + "pip_corner", on.corner.name.lowercase())
+            .putInt(ASLEEP + "popup_duration", on.durationSeconds)
+            .putString(ASLEEP + "audio", on.audio.name.lowercase())
+            .apply()
+    }
+
+    /** Picture-in-picture height in % of the screen height while the TV is on, set with a slider. */
+    val popupSizePercent: Int
+        get() = if (prefs.contains(KEY_POPUP_SIZE)) prefs.getInt(KEY_POPUP_SIZE, 50).coerceIn(20, 100)
+        else when (prefs.getString("pip_size", "medium")) { // the older Small/Medium/Large choice
+            "small" -> 35
+            "large" -> 70
+            else -> 50
         }
 
-    val durationSeconds get() = prefs.getInt("popup_duration", 30).coerceIn(5, 300)
     val extendOnMotion get() = prefs.getBoolean("extend_on_motion", true)
     val showLabel get() = prefs.getBoolean("show_label", true)
     val backCloses get() = prefs.getBoolean("back_closes", true)
-    val audio get() = enumPref("audio", Audio.RING_ONLY)
     val showWhen get() = enumPref("show_when", ShowWhen.ALWAYS)
     val wakeScreen get() = prefs.getBoolean("wake_screen", true)
+    val sleepAfter get() = prefs.getBoolean("sleep_after", true)
     val cooldownSeconds get() = (prefs.getString("cooldown", "10") ?: "10").toIntOrNull() ?: 10
 
     val quietHoursEnabled get() = prefs.getBoolean("quiet_enabled", false)
@@ -46,6 +81,19 @@ class Settings(context: Context) {
     val quietAllowsRings get() = prefs.getBoolean("quiet_allow_ring", true)
 
     val localOnly get() = prefs.getBoolean("local_only", true)
+
+    /** Minutes between on-screen reminders while something is wrong; 0 = remind once. */
+    val problemReminderMinutes get() = (prefs.getString("problem_reminder", "30") ?: "30").toIntOrNull() ?: 30
+
+    /**
+     * The one camera that pops up. Until the user picks one, the doorbell (or
+     * the first camera if there is no doorbell).
+     */
+    val popupCamera: String?
+        get() = prefs.getString(KEY_CAMERA, null)
+            ?: EufyConnection.cameras.let { cams -> (cams.firstOrNull { it.isDoorbell } ?: cams.firstOrNull())?.serial }
+
+    fun isWatched(serial: String) = serial == popupCamera
     val keepAwake get() = prefs.getBoolean("keep_awake", true)
 
     fun isQuietNow(now: Calendar = Calendar.getInstance()): Boolean {
@@ -65,5 +113,9 @@ class Settings(context: Context) {
 
     companion object {
         const val KEY_SERVICE_ENABLED = "service_enabled"
+        const val KEY_CAMERA = "popup_camera"
+        const val KEY_POPUP_SIZE = "popup_size"
+        /** Prefix for the settings used when the pop-up wakes the TV. */
+        const val ASLEEP = "asleep_"
     }
 }

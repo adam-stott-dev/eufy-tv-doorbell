@@ -8,7 +8,7 @@ order: 1
 
 ## What you need
 
-- An Android TV or Google TV box running Android 8.0 or later. The app is built for 64-bit ARM (arm64-v8a), which covers the NVIDIA SHIELD TV, Chromecast with Google TV and most current boxes.
+- An Android TV or Google TV box running Android 8.0 or later. The app is built for 64-bit ARM (arm64-v8a), such as the NVIDIA SHIELD TV. Many cheaper boxes and the Chromecast with Google TV run 32-bit Android and can't install it. To check, run `adb shell getprop ro.product.cpu.abi`: it must say `arm64-v8a`.
 - A Eufy doorbell or camera that works in the Eufy Security app. It has been tested with a Video Doorbell E340 on a HomeBase S380.
 - A computer with [adb](https://developer.android.com/tools/releases/platform-tools) for two one-off commands. You can install the app without a computer, but letting it show on top of other apps needs adb once.
 
@@ -45,7 +45,7 @@ Android TV has no settings screen for this permission, so run this once from a c
 adb shell appops set io.github.adamstottdev.eufytv SYSTEM_ALERT_WINDOW allow
 ```
 
-Without it the app still works, but the pop-up opens full screen instead of as picture-in-picture, and the app reminds you on screen.
+Don't skip this. Without it, Android usually stops the pop-up from appearing over other apps, and the app reminds you on screen until it's done.
 
 ## 4. Keep it fast after standby (optional)
 
@@ -55,9 +55,20 @@ When the TV has been asleep, Android can delay background apps. This lets doorbe
 adb shell dumpsys deviceidle whitelist +io.github.adamstottdev.eufytv
 ```
 
-## 5. Open the app and sign in
+## 5. Let it put the TV back to sleep (optional)
 
-Open **Eufy TV Doorbell** from the apps row, select **Eufy account** and sign in. See [Sign in](sign-in.md). Then select **Show a test pop-up** to check it works.
+If a pop-up wakes the TV, the app can put it back to sleep afterwards. Android only allows this through an accessibility service, which you turn on once. It only puts the TV to sleep and reads nothing on screen.
+
+On the TV: **Settings > Device Preferences > Accessibility > Eufy TV Doorbell sleep**, turn it on. Or from a computer, but only if `adb shell settings get secure enabled_accessibility_services` prints `null` or nothing (otherwise this switches your other accessibility services off):
+
+```
+adb shell settings put secure enabled_accessibility_services io.github.adamstottdev.eufytv/.service.SleepService
+adb shell settings put secure accessibility_enabled 1
+```
+
+## 6. Open the app and sign in
+
+Open **Eufy TV Doorbell** from the apps row, select **Eufy account** and sign in. See [Sign in](sign-in.md). Then select **Check and test > Show a test pop-up** to check it works.
 
 The app starts by itself when the TV turns on, so you only need to open it again to change settings.
 

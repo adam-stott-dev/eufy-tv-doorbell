@@ -35,6 +35,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".settings.SignInActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- Full-screen fallback when the overlay permission is missing,
              and used to wake the TV out of the screensaver. -->
         <activity
@@ -55,6 +60,12 @@
                 android:value="Keeps a connection to the user's doorbell to show its live video when it rings" />
         </service>
 
+        <!-- Embedded Node.js running the Eufy connection, in its own process so it can be restarted -->
+        <service
+            android:name=".eufy.NodeHostService"
+            android:exported="false"
+            android:process=":node" />
+
         <!-- adb-only test trigger: android.permission.DUMP is held by the shell, not by apps -->
         <receiver
             android:name=".service.TestTriggerReceiver"
@@ -73,5 +84,18 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+
+        <service
+            android:name=".service.SleepService"
+            android:exported="true"
+            android:label="@string/sleep_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/sleep_service" />
+        </service>
     </application>
 </manifest>

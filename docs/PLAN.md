@@ -4,7 +4,7 @@
 
 A lightweight Android TV app that runs in the background and, when a Eufy doorbell rings or a Eufy camera detects motion, shows the live video on top of whatever is on screen (apps, the home screen and the screensaver), then hides it again.
 
-- **One APK, nothing else to install.** Anyone can download it from the GitHub Releases page and sideload it. No Termux, no Raspberry Pi, no Home Assistant.
+- **One APK, nothing else to install.** Anyone can download it from the GitHub Releases page and sideload it. No Raspberry Pi, no Home Assistant.
 - **Released automatically.** Every merge to `main` builds a signed APK and publishes it as a GitHub Release.
 - **Sign in inside the app.** Each user connects their own Eufy account (ideally a secondary account the cameras are shared with) on the TV. Credentials stay on the device and never appear in this repo.
 - **Video stays on the home network** by default (local P2P to the HomeBase), with an opt-in fallback to Eufy's relay.
@@ -28,20 +28,13 @@ Hardware support in client 4.1.0:
 - **Ring, motion and person events** come through Eufy's push notifications (`device rings`, `device motion detected`, `device person detected`).
 - **Livestream** comes over P2P from the station as raw H.264 or H.265 plus AAC audio (`startStationLivestream`), which Android can decode natively.
 
-**Update, 15 Nov 2026: upstream development has ended.** The maintainers posted ["Development of this project has ended"](https://github.com/bropat/eufy-security-client/issues/965): the library depends on Eufy's legacy API, which Eufy is shutting down, and a new integration built around "Eufy Mega" is in development (followed on their Discord, not yet published). npm marks both packages "no longer supported" since 12 Sep 2026. Version 4.1.x already signs in through the new Mega (v6) login first and the legacy one second, and it worked in our proof of concept. Our approach: pin 4.1.1, keep the Eufy bridge behind a small interface inside the app so it can be swapped for the Mega-based successor when it ships, and watch upstream.
+**Update, 15 Nov 2026: upstream development has ended.** The maintainers posted ["Development of this project has ended"](https://github.com/bropat/eufy-security-client/issues/965): the library depends on Eufy's legacy API, which Eufy is shutting down, and a new integration built around "Eufy Mega" is in development (followed on their Discord, not yet published). npm marks both packages "no longer supported" since 12 Sep 2026. Version 4.1.x already signs in through the new Mega (v6) login first and the legacy one second, and it worked in our first test. Our approach: pin 4.1.1, keep the Eufy bridge behind a small interface inside the app so it can be swapped for the Mega-based successor when it ships, and watch upstream.
 
-So the pieces we need exist, but the E340-through-HomeBase-3 livestream is recent and the HomeBase 3 support is marked partial. That is exactly what the proof of concept checks before we build on it.
+So the pieces we need exist, but the E340-through-HomeBase-3 livestream is recent and the HomeBase 3 support is marked partial. So we checked it on the real hardware first.
 
-## Step 1: proof of concept (now)
+## Step 1: check it works on the SHIELD (done)
 
-Run the library on the SHIELD in Termux and measure: login, ring and motion events and their delay, time to first video frame, codec and resolution, CPU and memory, and behaviour after the SHIELD sleeps. Instructions: [poc/README.md](../poc/README.md).
-
-Go/no-go:
-
-- Ring events arrive within about 2 seconds.
-- A livestream starts within about 5 seconds and plays.
-- Idle CPU is low (a few % of one core) and memory is well under 150 MB.
-- Events still arrive, even if a little late, after the TV has been off for a while.
+Before building the app, a first test on the SHIELD confirmed login, ring events and the livestream (first video in under a second over the home network, 1600x2200 H.264 with audio) at under 5% of one CPU core and about 95 MB of memory.
 
 ## Step 2: the app
 
@@ -73,7 +66,7 @@ The app needs the protocol logic from eufy-security-client (cloud login with enc
    - `nodejs-mobile` is the usual way to do this, but its latest release is Node 18, and the library now needs Node 20+. So we will most likely build Node 22/24 for Android with the NDK in CI (once, cached), ship it as `libnode.so` in `jniLibs` and run it as a child process from the service. Adds roughly 25–35 MB to the APK.
 2. **Port to Kotlin.** Smaller and lighter, but it means re-implementing login, the push client and the P2P protocol, and following every upstream protocol change by hand. Kept as a fallback if the embedded runtime is too heavy on the SHIELD.
 
-The PoC's CPU and memory numbers decide between these.
+The first test's CPU and memory numbers (low) chose option 1.
 
 ### Background service and standby
 
@@ -116,7 +109,7 @@ Settings are stored with DataStore; the password is stored encrypted with the An
 
 ### Milestones
 
-1. **PoC** on the SHIELD in Termux (this step).
+1. **First test** on the SHIELD (done).
 2. **App skeleton + CI release:** Kotlin project, foreground service, boot start, settings screen, signed APK published on merge to `main`.
 3. **Embedded bridge:** Node runtime in the APK, sign-in flow (with 2FA/captcha), device list, events in the app log.
 4. **Pop-up:** overlay window, MediaCodec player, auto-hide, test button.
@@ -126,8 +119,8 @@ Settings are stored with DataStore; the password is stored encrypted with the An
 
 ## Risks
 
-- **Deep standby.** With the TV off, the SHIELD may pause background work, so the first event after waking could be late or lost. Mitigations above; the PoC measures it.
-- **Load from a Node runtime** running all the time. Measured by the PoC; Kotlin port is the fallback.
+- **Deep standby.** With the TV off, the SHIELD may pause background work, so the first event after waking could be late or lost. Mitigations above.
+- **Load from a Node runtime** running all the time. Measured as low on the SHIELD; Kotlin port is the fallback.
 - **Eufy shuts down its legacy API** and upstream has stopped maintaining the library. Login already uses the new API; push events or P2P may break when the legacy API goes. Mitigation: bridge behind an interface, pinned version, switch to the Mega-based successor once it is published.
 - **Livestream start time.** If P2P takes too long, keep the station connection warm and show a snapshot (the event image) until video arrives.
 - **Account side effects.** A secondary account avoids logging out the phone app; the sign-in screen will recommend it.

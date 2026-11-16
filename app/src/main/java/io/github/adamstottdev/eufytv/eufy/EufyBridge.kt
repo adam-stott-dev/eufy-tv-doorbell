@@ -1,7 +1,7 @@
 package io.github.adamstottdev.eufytv.eufy
 
 /** What happened at a camera. */
-enum class EventType { RING, MOTION, PERSON, TEST }
+enum class EventType { RING, MOTION, PERSON, LIVE, TEST }
 
 data class DoorbellEvent(
     val deviceSerial: String,
@@ -10,13 +10,42 @@ data class DoorbellEvent(
     val timeMillis: Long = System.currentTimeMillis(),
 )
 
+/** A camera or doorbell on the user's Eufy account. */
+data class Camera(
+    val serial: String,
+    val name: String,
+    val model: String,
+    val isDoorbell: Boolean,
+)
+
+/** Where the connection to Eufy is up to. */
+sealed interface BridgeState {
+    /** No Eufy account saved. */
+    data object SignedOut : BridgeState
+    data object Connecting : BridgeState
+    data class Connected(val receivingEvents: Boolean) : BridgeState
+    /** Eufy emailed a verification code that the user must type in. */
+    data object NeedCode : BridgeState
+    data class NeedCaptcha(val id: String, val png: ByteArray) : BridgeState
+    /** Eufy rejected the sign-in: the user has to sign in again. */
+    data class SignInFailed(val message: String) : BridgeState
+    /** Temporarily unreachable; retrying by itself. */
+    data class Disconnected(val message: String) : BridgeState
+}
+
 /** Raw elementary stream from a camera: Annex-B H.264/H.265 video and ADTS AAC audio. */
 interface LiveStreamSink {
-    fun onStart(codec: String, width: Int, height: Int, fps: Int)
+    fun onStart(codec: String, width: Int, height: Int, fps: Int, hasAudio: Boolean)
     fun onVideo(data: ByteArray, offset: Int, length: Int)
     fun onAudio(data: ByteArray, offset: Int, length: Int)
-    fun onStop()
+    fun onStop(reason: String?)
 }
+
+data class EufyAccount(
+    val email: String,
+    val password: String,
+    val country: String,
+)
 
 /**
  * The connection to Eufy. Kept behind this interface so the implementation
@@ -26,19 +55,16 @@ interface LiveStreamSink {
 interface EufyBridge {
     interface Listener {
         fun onEvent(event: DoorbellEvent)
-        fun onStatus(status: String)
+        fun onState(state: BridgeState)
+        fun onCameras(cameras: List<Camera>)
     }
 
-    fun start(listener: Listener)
+    fun start(account: EufyAccount, localOnly: Boolean, listener: Listener)
     fun stop()
+    fun submitCode(code: String)
+    fun submitCaptcha(id: String, code: String)
+    /** Ask for a reconnect now, e.g. after the network comes back. */
+    fun reconnect()
     fun startLivestream(deviceSerial: String, sink: LiveStreamSink)
     fun stopLivestream(deviceSerial: String)
-}
-
-/** Placeholder until the embedded Eufy connection lands: never produces events. */
-class NoEufyBridge : EufyBridge {
-    override fun start(listener: EufyBridge.Listener) = listener.onStatus("Eufy connection not set up yet")
-    override fun stop() = Unit
-    override fun startLivestream(deviceSerial: String, sink: LiveStreamSink) = Unit
-    override fun stopLivestream(deviceSerial: String) = Unit
 }

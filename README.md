@@ -4,13 +4,15 @@ Pop up your Eufy doorbell's live video on Android TV when someone rings or motio
 
 A lightweight background app for Android TV. When your Eufy doorbell rings, or a Eufy camera sees motion, the live view appears on top of whatever is on screen (including the screensaver), then hides itself after a while. No extra hardware: everything runs on the TV box.
 
-> **Status: early.** We're validating the approach on an NVIDIA SHIELD TV with a Eufy Video Doorbell E340 and HomeBase S380 before building the app. See the [plan](docs/PLAN.md) and the [proof of concept](poc/README.md).
+> **Status: early.** Tested on an NVIDIA SHIELD TV with a Eufy Video Doorbell E340 and HomeBase S380. See the [plan](docs/PLAN.md).
+>
+> Needs a 64-bit ARM TV box (arm64-v8a), such as the SHIELD TV. Many cheaper boxes and the Chromecast with Google TV run 32-bit Android and can't install it. Check first with `adb shell getprop ro.product.cpu.abi`: it must say `arm64-v8a`.
 
-## Planned features
+## Features
 
-- Pop-up on ring, motion or person detection, per camera.
-- Picture-in-picture (size and corner of your choice) or full screen.
-- Shows over apps, the home screen and the screensaver; can wake the TV.
+- Pop-up on ring, motion or person detection, for the camera you choose.
+- Picture-in-picture (size and corner of your choice) or full screen, set separately for when the TV is on and when the pop-up wakes it (full screen by default).
+- Shows over apps, the home screen and the screensaver; can wake the TV, and put it back to sleep afterwards if the pop-up woke it.
 - Configurable duration, audio, quiet hours and cooldown.
 - Video stays on your home network (local P2P to the HomeBase).
 - One APK, published automatically on GitHub Releases. Sign in with your Eufy account in the app.
@@ -23,28 +25,50 @@ A lightweight background app for Android TV. When your Eufy doorbell rings, or a
    ```
    adb shell appops set io.github.adamstottdev.eufytv SYSTEM_ALERT_WINDOW allow
    ```
-   Without it, the pop-up opens full screen instead.
+   Don't skip this: without it, Android usually stops the pop-up appearing over other apps.
 4. Optional, for faster pop-ups after the TV has been asleep:
    ```
    adb shell dumpsys deviceidle whitelist +io.github.adamstottdev.eufytv
    ```
-5. Open **Eufy TV Doorbell** from the apps row, sign in, and choose your settings.
+5. Optional, so the TV goes back to sleep after a pop-up that woke it (select **Allow putting the TV to sleep** in the app's settings and turn it on, or run):
+   ```
+   adb shell settings get secure enabled_accessibility_services
+   ```
+   If that prints `null` or nothing, run the two lines below. If it lists other services, add `:io.github.adamstottdev.eufytv/.service.SleepService` to the end of that list instead, or the others get switched off.
+   ```
+   adb shell settings put secure enabled_accessibility_services io.github.adamstottdev.eufytv/.service.SleepService
+   adb shell settings put secure accessibility_enabled 1
+   ```
+   This turns on a small accessibility service that only puts the TV to sleep; it reads nothing on screen. Easier: turn on **Eufy TV Doorbell sleep** in **Settings > Device Preferences > Accessibility**.
+6. Open **Eufy TV Doorbell** from the apps row, choose **Eufy account** and sign in: scan the QR code with your phone and enter your details there (it's one-time, home network only, and encrypted on the phone), or type them on the TV. Then choose your settings.
+
+If anything stops the pop-ups working later (Eufy signs you out, a verification code is needed, the connection drops for more than a few minutes), a red message appears on screen and repeats until it's fixed. You can change how often in **Advanced**.
 
 ## Testing from a computer
 
-Show the test pop-up without touching the TV (optionally after a delay, so you can start the screensaver or a video first):
+Show the test pop-up (your chosen camera, live) without touching the TV, optionally after a delay so you can start the screensaver or a video first:
 
 ```
 adb shell am broadcast -a io.github.adamstottdev.eufytv.TEST_POPUP -n io.github.adamstottdev.eufytv/.service.TestTriggerReceiver --el delay_ms 0
 ```
 
-To test with real video, copy a raw `.h264` clip to `/sdcard/Android/data/io.github.adamstottdev.eufytv/files/test.h264`.
+For another camera, add `--es live <camera serial>`:
+
+```
+adb shell am broadcast -a io.github.adamstottdev.eufytv.TEST_POPUP -n io.github.adamstottdev.eufytv/.service.TestTriggerReceiver --es live <camera serial>
+```
 
 ## How it works
 
-Eufy has no official API. The app embeds the open-source [eufy-security-client](https://github.com/bropat/eufy-security-client) library to sign in, receive ring and motion events, and open the livestream from your HomeBase, then decodes the video natively on the TV.
+Eufy has no official API. The app embeds the open-source [eufy-security-client](https://github.com/bropat/eufy-security-client) library, running on a Node.js runtime built into the APK ([aosp-node-runtime](https://github.com/fellow99/aosp-node-runtime)), to sign in, receive ring and motion events, and open the livestream from your HomeBase. The video and sound are decoded natively on the TV. The connection code is in [`bridge/`](bridge/).
+
+Your Eufy password stays on the TV, encrypted with a key held by the Android Keystore, and is only sent to Eufy.
 
 Use a **secondary Eufy account** with your cameras shared to it. Signing in with your main account elsewhere can log your phone app out.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE). The app bundles other open-source software, listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## Not affiliated
 

@@ -20,3 +20,4 @@ build/
 .idea/
 *.iml
 .DS_Store
+bridge/dist/

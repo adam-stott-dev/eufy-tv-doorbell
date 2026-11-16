@@ -13,11 +13,14 @@ import android.view.Gravity
 import android.view.Surface
 import android.view.View
 import android.view.WindowManager
+import io.github.adamstottdev.eufytv.Diag
 import io.github.adamstottdev.eufytv.R
 import io.github.adamstottdev.eufytv.eufy.DoorbellEvent
+import io.github.adamstottdev.eufytv.eufy.EufyConnection
 import io.github.adamstottdev.eufytv.eufy.EventType
+import io.github.adamstottdev.eufytv.eufy.LiveStreamSink
+import io.github.adamstottdev.eufytv.service.SleepService
 import io.github.adamstottdev.eufytv.settings.Settings
-import java.io.File
 import java.text.DateFormat
 import java.util.Date
 
@@ -39,26 +42,46 @@ object PopupController {
     private var current: DoorbellEvent? = null
     private var player: AnnexBPlayer? = null
     private var feeder: Thread? = null
+    private var live: LiveSink? = null
     private var screenLock: PowerManager.WakeLock? = null
     private var durationMs = 30_000L
+    /** True when the TV was asleep and this pop-up woke it, so it goes back to sleep after. */
+    private var wokeTv = false
+    private var appContext: Context? = null
+    private var style: Settings.Style? = null
     private val hideRunnable = Runnable { hide() }
 
     fun isShowing(serial: String) = current?.deviceSerial == serial
 
-    fun show(context: Context, event: DoorbellEvent) = main.post {
+    /** Shows the pop-up for [event]; [durationOverrideMs] replaces the user's duration (used by tests). */
+    fun show(context: Context, event: DoorbellEvent, durationOverrideMs: Long? = null) = main.post {
         val app = context.applicationContext
         val settings = Settings(app)
-        hide()
+        appContext = app
+        hide(replacing = true)
+        val asleep = !(app.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive
+        if (asleep && !settings.wakeScreen) {
+            Log.i(TAG, "TV is asleep and waking it is off, no pop-up for ${event.type}")
+            return@post
+        }
         current = event
-        durationMs = settings.durationSeconds * 1000L
+        // A pop-up that replaces one which woke the TV keeps the "asleep" look.
+        val s = settings.style(asleep = (asleep || wokeTv) && settings.wakeScreen)
+        style = s
+        durationMs = durationOverrideMs ?: (s.durationSeconds * 1000L)
 
-        Log.i(TAG, "Showing ${event.type} from ${event.deviceName} for ${settings.durationSeconds}s " +
-            "(overlay=${AndroidSettings.canDrawOverlays(app)}, mode=${settings.popupMode}, wake=${settings.wakeScreen})")
-        if (settings.wakeScreen) wakeScreen(app)
+        Diag.init(app)
+        Diag.i(TAG, "Showing ${event.type} from ${event.deviceName} for ${durationMs / 1000}s " +
+            "(overlay=${AndroidSettings.canDrawOverlays(app)}, asleep=$asleep, mode=${s.mode}, wake=${settings.wakeScreen})")
+        if (settings.wakeScreen) {
+            // A pop-up that replaces one which woke the TV keeps that flag.
+            wokeTv = wokeTv || asleep
+            wakeScreen(app)
+        }
 
         val label = if (settings.showLabel) labelFor(app, event) else null
         if (AndroidSettings.canDrawOverlays(app)) {
-            showOverlay(app, settings, event, label)
+            showOverlay(app, settings, s, event, label)
         } else {
             Log.i(TAG, "No overlay permission, using full-screen activity")
             app.startActivity(
@@ -75,13 +98,20 @@ object PopupController {
         main.postDelayed(hideRunnable, durationMs)
     }
 
-    fun hide() {
+    fun hide() = hide(replacing = false)
+
+    private fun hide(replacing: Boolean) {
         main.removeCallbacks(hideRunnable)
         if (current != null) Log.i(TAG, "Hiding pop-up")
         feeder?.interrupt()
         feeder = null
         player?.release()
         player = null
+        live?.let { l ->
+            live = null
+            EufyConnection.stopLivestream(l.serial)
+            l.release()
+        }
         overlay?.let { v ->
             try {
                 (v.context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).removeView(v)
@@ -94,6 +124,14 @@ object PopupController {
         activity = null
         screenLock?.takeIf { it.isHeld }?.release()
         screenLock = null
+        val app = appContext
+        if (!replacing && wokeTv && app != null) {
+            wokeTv = false
+            if (Settings(app).sleepAfter) {
+                val ok = SleepService.sleepNow()
+                Log.i(TAG, if (ok) "Putting the TV back to sleep" else "Can't put the TV to sleep (not allowed)")
+            }
+        }
         current = null
     }
 
@@ -108,11 +146,17 @@ object PopupController {
     internal fun activityClosed(a: PopupActivity) {
         if (activity === a) {
             activity = null
-            hide()
+            closedByUser()
         }
     }
 
-    private fun showOverlay(app: Context, s: Settings, event: DoorbellEvent, label: String?) {
+    /** Someone closed it with the remote, so they're watching: leave the TV on. */
+    private fun closedByUser() {
+        wokeTv = false
+        hide()
+    }
+
+    private fun showOverlay(app: Context, settings: Settings, style: Settings.Style, event: DoorbellEvent, label: String?) {
         val wm = app.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         val screen = app.resources.displayMetrics
         val sw = screen.widthPixels
@@ -121,7 +165,7 @@ object PopupController {
         var flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
-        flags = if (s.backCloses) {
+        flags = if (settings.backCloses) {
             flags or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
         } else {
             flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
@@ -135,14 +179,14 @@ object PopupController {
             PixelFormat.TRANSLUCENT,
         )
         lp.title = "Doorbell pop-up"
-        if (s.popupMode == Settings.PopupMode.PIP) {
-            val h = (sh * s.pipHeightFraction).toInt()
+        if (style.mode == Settings.PopupMode.PIP) {
+            val h = (sh * style.heightFraction).toInt()
             lp.height = h
             lp.width = (h * DEFAULT_ASPECT).toInt()
             val margin = (sw * 0.03f).toInt()
             lp.x = margin
             lp.y = margin
-            lp.gravity = when (s.corner) {
+            lp.gravity = when (style.corner) {
                 Settings.Corner.TOP_LEFT -> Gravity.TOP or Gravity.START
                 Settings.Corner.TOP_RIGHT -> Gravity.TOP or Gravity.END
                 Settings.Corner.BOTTOM_LEFT -> Gravity.BOTTOM or Gravity.START
@@ -160,43 +204,80 @@ object PopupController {
         wm.addView(view, lp)
         Log.i(TAG, "Overlay added ${lp.width}x${lp.height}")
         overlay = view
-        if (s.backCloses) view.requestFocus()
+        if (settings.backCloses) view.requestFocus()
     }
 
     private fun buildView(ctx: Context, event: DoorbellEvent, label: String?): PopupView {
         lateinit var view: PopupView
-        view = PopupView(ctx, label, onSurface = { surface -> startVideo(ctx, event, view, surface) }, onClose = { hide() })
+        view = PopupView(ctx, label, onSurface = { surface -> startVideo(ctx, event, view, surface) }, onClose = { closedByUser() })
         return view
     }
 
     private fun startVideo(ctx: Context, event: DoorbellEvent, view: PopupView, surface: Surface) {
         if (event.type == EventType.TEST) {
-            val file = File(ctx.getExternalFilesDir(null), "test.h264")
-            if (!file.exists()) {
-                view.showMessage(ctx.getString(R.string.popup_test_no_video))
-                return
-            }
-            val p = AnnexBPlayer(surface, paceFps = 15, onVideoSize = view::setVideoSize)
-            player = p
-            feeder = Thread({
-                try {
-                    file.inputStream().use { input ->
-                        val buf = ByteArray(16 * 1024)
-                        while (!Thread.currentThread().isInterrupted) {
-                            val n = input.read(buf)
-                            if (n < 0) break
-                            p.feed(buf, 0, n)
-                        }
-                    }
-                } catch (_: InterruptedException) {
-                } catch (e: Exception) {
-                    Log.w(TAG, "Test video failed", e)
-                }
-            }, "TestVideoFeeder").apply { start() }
+            view.showMessage(ctx.getString(R.string.popup_test_no_video))
             return
         }
-        // Live video arrives with the Eufy connection (next milestone).
-        view.showMessage(ctx.getString(R.string.popup_no_live_yet))
+        val audio = when ((style ?: Settings(ctx).style(asleep = false)).audio) {
+            Settings.Audio.OFF -> false
+            Settings.Audio.ON -> true
+            Settings.Audio.RING_ONLY -> event.type == EventType.RING || event.type == EventType.LIVE
+        }
+        Diag.i(TAG, "Asking for video from ${event.deviceName}")
+        val sink = LiveSink(event.deviceSerial, surface, view, audio)
+        live = sink
+        EufyConnection.startLivestream(event.deviceSerial, sink)
+        // Say so if the camera never sends video, rather than "Connecting…" forever.
+        main.postDelayed({
+            if (live === sink && !sink.started) view.showMessage(ctx.getString(R.string.popup_no_video))
+        }, 12_000L)
+    }
+
+    /** Receives the camera's livestream and plays it in the pop-up. */
+    private class LiveSink(
+        val serial: String,
+        private val surface: Surface,
+        private val view: PopupView,
+        private val audioOn: Boolean,
+    ) : LiveStreamSink {
+        @Volatile private var video: AnnexBPlayer? = null
+        @Volatile private var sound: AacPlayer? = null
+        @Volatile private var released = false
+        @Volatile var started = false
+            private set
+
+        override fun onStart(codec: String, width: Int, height: Int, fps: Int, hasAudio: Boolean) {
+            if (released) return
+            started = true
+            video?.release()
+            if (width > 0 && height > 0) view.setVideoSize(width, height)
+            video = AnnexBPlayer(surface, hevc = codec == "h265", onVideoSize = view::setVideoSize,
+                onFirstFrame = { Diag.i(TAG, "First picture on screen") })
+            sound?.release()
+            sound = if (audioOn && hasAudio) AacPlayer() else null
+        }
+
+        override fun onVideo(data: ByteArray, offset: Int, length: Int) {
+            video?.feed(data, offset, length)
+        }
+
+        override fun onAudio(data: ByteArray, offset: Int, length: Int) {
+            sound?.feed(data, offset, length)
+        }
+
+        override fun onStop(reason: String?) {
+            if (released) return
+            if (reason != null) view.showMessage(reason)
+            release()
+        }
+
+        fun release() {
+            released = true
+            video?.release()
+            video = null
+            sound?.release()
+            sound = null
+        }
     }
 
     @SuppressLint("WakelockTimeout")
@@ -215,6 +296,7 @@ object PopupController {
             EventType.RING -> ctx.getString(R.string.event_ring)
             EventType.MOTION -> ctx.getString(R.string.event_motion)
             EventType.PERSON -> ctx.getString(R.string.event_person)
+            EventType.LIVE -> ctx.getString(R.string.event_live)
             EventType.TEST -> ctx.getString(R.string.event_test)
         }
         val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(e.timeMillis))

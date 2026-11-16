@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in to Eufy on your TV</title>
+<style>
+  :root { color-scheme: light dark; --bg: #f6f7f9; --card: #fff; --text: #1b1d21; --muted: #5d6470; --accent: #1e6fd9; --error: #b3261e; --ok: #1e6b32; --border: #d6dae0; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #121417; --card: #1c1f24; --text: #eceef1; --muted: #a3aab5; --accent: #5ea0ff; --error: #ff8a80; --ok: #7bd88f; --border: #353a42; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 440px; margin: 0 auto; padding: 24px 16px 40px; }
+  h1 { font-size: 22px; margin: 4px 0 6px; }
+  p { color: var(--muted); margin: 0 0 16px; }
+  form { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+  label { display: block; font-weight: 600; font-size: 14px; margin: 12px 0 6px; }
+  label:first-child { margin-top: 0; }
+  input { width: 100%; font: inherit; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+  button { width: 100%; margin-top: 18px; padding: 13px; font: inherit; font-weight: 600; border: 0; border-radius: 10px; background: var(--accent); color: #fff; }
+  button:disabled { opacity: .6; }
+  #msg { margin-top: 14px; min-height: 1.4em; font-weight: 600; }
+  #msg.error { color: var(--error); } #msg.ok { color: var(--ok); }
+  .small { font-size: 13px; margin-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Sign in to Eufy on your TV</h1>
+  <p>Enter the details you use in the Eufy Security app. They are encrypted on this phone and sent only to your TV, which then signs in to Eufy.</p>
+  <form id="f" autocomplete="on">
+    <label for="email">Email</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <label for="country">Country code</label>
+    <input id="country" maxlength="2" autocapitalize="characters" value="GB" required>
+    <button id="go" type="submit">Send to TV</button>
+    <div id="msg" role="status"></div>
+  </form>
+  <p class="small">This page only works on your home network, for a few minutes, and only once. If Eufy asks for a verification code, type it on the TV.</p>
+</main>
+<script>
+"use strict";
+// AES-128-GCM in plain JavaScript: browsers only offer WebCrypto on https pages,
+// and this page is served by the TV over the home network.
+var SBOX = (function () {
+  var s = new Uint8Array(256), p = 1, q = 1;
+  do {
+    p = p ^ ((p << 1) & 0xff) ^ (p & 0x80 ? 0x1b : 0);
+    q ^= q << 1; q ^= q << 2; q ^= q << 4; q &= 0xff; if (q & 0x80) q ^= 0x09;
+    var x = q ^ ((q << 1) | (q >> 7)) ^ ((q << 2) | (q >> 6)) ^ ((q << 3) | (q >> 5)) ^ ((q << 4) | (q >> 4));
+    s[p] = (x ^ 0x63) & 0xff;
+  } while (p !== 1);
+  s[0] = 0x63;
+  return s;
+})();
+function xt(a) { return ((a << 1) ^ (a & 0x80 ? 0x1b : 0)) & 0xff; }
+function expandKey(k) {
+  var w = new Uint8Array(176), rc = 1; w.set(k);
+  for (var i = 16; i < 176; i += 4) {
+    var t = w.slice(i - 4, i);
+    if (i % 16 === 0) {
+      t = [SBOX[t[1]] ^ rc, SBOX[t[2]], SBOX[t[3]], SBOX[t[0]]];
+      rc = xt(rc);
+    }
+    for (var j = 0; j < 4; j++) w[i + j] = w[i - 16 + j] ^ t[j];
+  }
+  return w;
+}
+function aesBlock(w, input) {
+  var s = new Uint8Array(16), r, c, i;
+  for (i = 0; i < 16; i++) s[i] = input[i] ^ w[i];
+  for (r = 1; r <= 10; r++) {
+    var t = new Uint8Array(16);
+    for (i = 0; i < 16; i++) t[i] = SBOX[s[(i + 4 * (i % 4)) % 16]]; // SubBytes + ShiftRows
+    if (r < 10) {
+      for (c = 0; c < 4; c++) {
+        var a0 = t[4 * c], a1 = t[4 * c + 1], a2 = t[4 * c + 2], a3 = t[4 * c + 3], x = a0 ^ a1 ^ a2 ^ a3;
+        t[4 * c] ^= x ^ xt(a0 ^ a1); t[4 * c + 1] ^= x ^ xt(a1 ^ a2);
+        t[4 * c + 2] ^= x ^ xt(a2 ^ a3); t[4 * c + 3] ^= x ^ xt(a3 ^ a0);
+      }
+    }
+    for (i = 0; i < 16; i++) s[i] = t[i] ^ w[16 * r + i];
+  }
+  return s;
+}
+function gmul(x, y) { // GF(2^128) multiply, GCM bit order
+  var z = new Uint8Array(16), v = y.slice(), i, j, b;
+  for (i = 0; i < 128; i++) {
+    if ((x[i >> 3] >> (7 - (i & 7))) & 1) for (j = 0; j < 16; j++) z[j] ^= v[j];
+    b = v[15] & 1;
+    for (j = 15; j > 0; j--) v[j] = (v[j] >> 1) | ((v[j - 1] & 1) << 7);
+    v[0] >>= 1; if (b) v[0] ^= 0xe1;
+  }
+  return z;
+}
+function gcmEncrypt(key, iv, pt) {
+  var w = expandKey(key), h = aesBlock(w, new Uint8Array(16));
+  var ctr = new Uint8Array(16); ctr.set(iv); ctr[15] = 1;
+  var j0 = ctr.slice(), ct = new Uint8Array(pt.length), y = new Uint8Array(16), i, k;
+  function inc() { for (var n = 15; n >= 12; n--) { ctr[n] = (ctr[n] + 1) & 0xff; if (ctr[n]) break; } }
+  for (i = 0; i < pt.length; i += 16) {
+    inc();
+    var ks = aesBlock(w, ctr);
+    for (k = 0; k < 16 && i + k < pt.length; k++) ct[i + k] = pt[i + k] ^ ks[k];
+  }
+  for (i = 0; i < ct.length; i += 16) {
+    for (k = 0; k < 16 && i + k < ct.length; k++) y[k] ^= ct[i + k];
+    y = gmul(y, h);
+  }
+  var len = new Uint8Array(16), bits = ct.length * 8;
+  for (k = 0; k < 4; k++) len[15 - k] = (bits / Math.pow(2, 8 * k)) & 0xff;
+  for (k = 0; k < 16; k++) y[k] ^= len[k];
+  y = gmul(y, h);
+  var tag = aesBlock(w, j0);
+  for (k = 0; k < 16; k++) tag[k] ^= y[k];
+  var out = new Uint8Array(ct.length + 16); out.set(ct); out.set(tag, ct.length);
+  return out;
+}
+function b64urlDecode(s) {
+  s = s.replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "=";
+  var bin = atob(s), out = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function b64(bytes) { var s = ""; for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]); return btoa(s); }
+
+if (typeof module !== "undefined") { module.exports = { gcmEncrypt: gcmEncrypt }; }
+else {
+  var key = null;
+  try { key = b64urlDecode(location.hash.slice(1)); } catch (e) { key = null; }
+  var form = document.getElementById("f"), msg = document.getElementById("msg"), go = document.getElementById("go");
+  function show(text, cls) { msg.textContent = text; msg.className = cls || ""; }
+  if (!key || key.length !== 16) { show("This link is incomplete. Scan the QR code on the TV again.", "error"); go.disabled = true; }
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var payload = JSON.stringify({
+      email: document.getElementById("email").value.trim(),
+      password: document.getElementById("password").value,
+      country: document.getElementById("country").value.trim().toUpperCase()
+    });
+    var iv = new Uint8Array(12); crypto.getRandomValues(iv);
+    var sealed = gcmEncrypt(key, iv, new TextEncoder().encode(payload));
+    go.disabled = true; show("Sending…");
+    fetch(location.pathname, { method: "POST", headers: { "Content-Type": "text/plain" }, body: b64(iv) + ":" + b64(sealed) })
+      .then(function (r) { return r.text().then(function (t) { return { ok: r.ok, text: t }; }); })
+      .then(function (r) {
+        if (r.ok) { show("Sent. Look at your TV to see how the sign-in goes. You can close this page.", "ok"); form.querySelectorAll("input").forEach(function (i) { i.value = ""; }); }
+        else { show(r.text || "The TV didn't accept it. Scan the QR code again.", "error"); go.disabled = false; }
+      })
+      .catch(function () { show("Couldn't reach the TV. Make sure your phone is on the same Wi-Fi, then scan the QR code again.", "error"); go.disabled = false; });
+  });
+}
+</script>
+</body>
+</html>

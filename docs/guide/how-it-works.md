@@ -27,7 +27,7 @@ Eufy has no official API for other apps. Eufy TV Doorbell embeds the open-source
 
 ## Source code
 
-Everything is on [GitHub](https://github.com/adam-stott-dev/eufy-tv-doorbell). The design notes are in the [plan](../PLAN.md) and the [proof of concept results](../POC-RESULTS.md).
+Everything is on [GitHub](https://github.com/adam-stott-dev/eufy-tv-doorbell). The design notes are in the [plan](../PLAN.md).
 
 ## Not affiliated
 

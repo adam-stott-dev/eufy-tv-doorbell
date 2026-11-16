@@ -1,7 +1,7 @@
 // Builds the project website into site/_site.
 //
 // Everything that can change with the app is read from the repository at build time:
-//   - user guide pages from docs/guide/*.md, plus docs/PLAN.md and docs/POC-RESULTS.md
+//   - user guide pages from docs/guide/*.md, plus docs/PLAN.md
 //   - package name, minimum Android version and CPU types from app/build.gradle.kts
 //   - the latest releases (version, APK, changelog) from the GitHub API
 // The landing page also refreshes the release details in the browser, so a new
@@ -161,7 +161,6 @@ function loadDocs() {
 
   const background = [
     { src: "docs/PLAN.md", slug: "plan", title: "Project plan", summary: "Goals, design and how the app is put together." },
-    { src: "docs/POC-RESULTS.md", slug: "poc-results", title: "Proof of concept", summary: "Measurements from the first test on a SHIELD TV." },
   ]
     .filter((d) => existsSync(join(root, d.src)))
     .map((d) => ({ ...d, section: "Background", body: parseFrontMatter(read(d.src)).body }));
@@ -285,7 +284,7 @@ function landing(app, releases, docs) {
   const { download, changelog } = releaseBlocks(releases);
   const pkg = app.packageName;
   const req = [`Android TV or Google TV, Android ${app.minAndroid} or later`];
-  if (app.abis.length) req.push(`${app.abis.includes("arm64-v8a") && app.abis.length === 1 ? "64-bit ARM" : app.abis.join(", ")} (SHIELD TV, Chromecast with Google TV and most current boxes)`);
+  if (app.abis.length) req.push(`${app.abis.includes("arm64-v8a") && app.abis.length === 1 ? "64-bit ARM" : app.abis.join(", ")} (such as the SHIELD TV)`);
   req.push("A Eufy doorbell or camera, signed in with an email and password");
   const guide = docs.filter((d) => d.section === "Guide");
 

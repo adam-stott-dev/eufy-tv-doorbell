@@ -29,12 +29,13 @@ class EventRouter(private val context: Context) {
     }
 
     private fun rejectReason(event: DoorbellEvent, s: Settings): String? {
-        if (event.type == EventType.TEST) return null
+        if (event.type == EventType.TEST || event.type == EventType.LIVE) return null
+        if (!s.isWatched(event.deviceSerial)) return "camera not chosen for pop-ups"
         when (event.type) {
             EventType.RING -> if (!s.triggerRing) return "rings turned off"
             EventType.MOTION -> if (!s.triggerMotion) return "motion turned off"
             EventType.PERSON -> if (!s.triggerPerson) return "person detection turned off"
-            EventType.TEST -> Unit
+            EventType.TEST, EventType.LIVE -> Unit
         }
         if (s.isQuietNow() && !(event.type == EventType.RING && s.quietAllowsRings)) return "quiet hours"
         if (s.showWhen == Settings.ShowWhen.IDLE_ONLY && isPlayingMedia()) return "something is playing"
