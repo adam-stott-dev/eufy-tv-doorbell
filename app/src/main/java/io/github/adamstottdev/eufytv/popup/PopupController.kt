@@ -18,6 +18,7 @@ import io.github.adamstottdev.eufytv.eufy.DoorbellEvent
 import io.github.adamstottdev.eufytv.eufy.EufyConnection
 import io.github.adamstottdev.eufytv.eufy.EventType
 import io.github.adamstottdev.eufytv.eufy.LiveStreamSink
+import io.github.adamstottdev.eufytv.service.SleepAdmin
 import io.github.adamstottdev.eufytv.settings.Settings
 import java.io.File
 import java.text.DateFormat
@@ -44,6 +45,9 @@ object PopupController {
     private var live: LiveSink? = null
     private var screenLock: PowerManager.WakeLock? = null
     private var durationMs = 30_000L
+    /** True when the TV was asleep and this pop-up woke it, so it goes back to sleep after. */
+    private var wokeTv = false
+    private var appContext: Context? = null
     private val hideRunnable = Runnable { hide() }
 
     fun isShowing(serial: String) = current?.deviceSerial == serial
@@ -52,13 +56,19 @@ object PopupController {
     fun show(context: Context, event: DoorbellEvent, durationOverrideMs: Long? = null) = main.post {
         val app = context.applicationContext
         val settings = Settings(app)
-        hide()
+        appContext = app
+        hide(replacing = true)
         current = event
         durationMs = durationOverrideMs ?: (settings.durationSeconds * 1000L)
 
         Log.i(TAG, "Showing ${event.type} from ${event.deviceName} for ${durationMs / 1000}s " +
             "(overlay=${AndroidSettings.canDrawOverlays(app)}, mode=${settings.popupMode}, wake=${settings.wakeScreen})")
-        if (settings.wakeScreen) wakeScreen(app)
+        val asleep = !(app.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive
+        if (settings.wakeScreen) {
+            // A pop-up that replaces one which woke the TV keeps that flag.
+            wokeTv = wokeTv || asleep
+            wakeScreen(app)
+        }
 
         val label = if (settings.showLabel) labelFor(app, event) else null
         if (AndroidSettings.canDrawOverlays(app)) {
@@ -79,7 +89,9 @@ object PopupController {
         main.postDelayed(hideRunnable, durationMs)
     }
 
-    fun hide() {
+    fun hide() = hide(replacing = false)
+
+    private fun hide(replacing: Boolean) {
         main.removeCallbacks(hideRunnable)
         if (current != null) Log.i(TAG, "Hiding pop-up")
         feeder?.interrupt()
@@ -103,6 +115,14 @@ object PopupController {
         activity = null
         screenLock?.takeIf { it.isHeld }?.release()
         screenLock = null
+        val app = appContext
+        if (!replacing && wokeTv && app != null) {
+            wokeTv = false
+            if (Settings(app).sleepAfter) {
+                val ok = SleepAdmin.sleepNow(app)
+                Log.i(TAG, if (ok) "Putting the TV back to sleep" else "Can't put the TV to sleep (not allowed)")
+            }
+        }
         current = null
     }
 
@@ -117,8 +137,14 @@ object PopupController {
     internal fun activityClosed(a: PopupActivity) {
         if (activity === a) {
             activity = null
-            hide()
+            closedByUser()
         }
+    }
+
+    /** Someone closed it with the remote, so they're watching: leave the TV on. */
+    private fun closedByUser() {
+        wokeTv = false
+        hide()
     }
 
     private fun showOverlay(app: Context, s: Settings, event: DoorbellEvent, label: String?) {
@@ -174,7 +200,7 @@ object PopupController {
 
     private fun buildView(ctx: Context, event: DoorbellEvent, label: String?): PopupView {
         lateinit var view: PopupView
-        view = PopupView(ctx, label, onSurface = { surface -> startVideo(ctx, event, view, surface) }, onClose = { hide() })
+        view = PopupView(ctx, label, onSurface = { surface -> startVideo(ctx, event, view, surface) }, onClose = { closedByUser() })
         return view
     }
 

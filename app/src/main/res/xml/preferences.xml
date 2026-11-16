@@ -65,6 +65,18 @@
             app:defaultValue="true"
             app:title="Wake the TV and close the screensaver"
             app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat
+            app:key="sleep_after"
+            app:defaultValue="true"
+            app:dependency="wake_screen"
+            app:title="Put the TV back to sleep afterwards"
+            app:summary="Only when the pop-up woke it"
+            app:iconSpaceReserved="false" />
+        <Preference
+            app:key="sleep_permission"
+            app:dependency="wake_screen"
+            app:title="Allow putting the TV to sleep"
+            app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="Quiet hours" app:iconSpaceReserved="false">

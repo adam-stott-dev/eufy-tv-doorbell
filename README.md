@@ -12,7 +12,7 @@ A lightweight background app for Android TV. When your Eufy doorbell rings, or a
 
 - Pop-up on ring, motion or person detection, per camera.
 - Picture-in-picture (size and corner of your choice) or full screen.
-- Shows over apps, the home screen and the screensaver; can wake the TV.
+- Shows over apps, the home screen and the screensaver; can wake the TV, and put it back to sleep afterwards if the pop-up woke it.
 - Configurable duration, audio, quiet hours and cooldown.
 - Video stays on your home network (local P2P to the HomeBase).
 - One APK, published automatically on GitHub Releases. Sign in with your Eufy account in the app.
@@ -30,7 +30,11 @@ A lightweight background app for Android TV. When your Eufy doorbell rings, or a
    ```
    adb shell dumpsys deviceidle whitelist +io.github.adamstottdev.eufytv
    ```
-5. Open **Eufy TV Doorbell** from the apps row, choose **Eufy account** and sign in: scan the QR code with your phone and enter your details there (it's one-time, home network only, and encrypted on the phone), or type them on the TV. Then choose your settings.
+5. Optional, so the TV goes back to sleep after a pop-up that woke it (select **Allow putting the TV to sleep** in the settings, or run):
+   ```
+   adb shell dpm set-active-admin io.github.adamstottdev.eufytv/.service.SleepAdmin
+   ```
+6. Open **Eufy TV Doorbell** from the apps row, choose **Eufy account** and sign in: scan the QR code with your phone and enter your details there (it's one-time, home network only, and encrypted on the phone), or type them on the TV. Then choose your settings.
 
 If anything stops the pop-ups working later (Eufy signs you out, a verification code is needed, the connection drops for more than a few minutes), a red message appears on screen and repeats until it's fixed. You can change how often in **Advanced**.
 

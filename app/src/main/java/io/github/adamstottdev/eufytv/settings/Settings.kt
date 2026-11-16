@@ -44,6 +44,7 @@ class Settings(context: Context) {
     val audio get() = enumPref("audio", Audio.RING_ONLY)
     val showWhen get() = enumPref("show_when", ShowWhen.ALWAYS)
     val wakeScreen get() = prefs.getBoolean("wake_screen", true)
+    val sleepAfter get() = prefs.getBoolean("sleep_after", true)
     val cooldownSeconds get() = (prefs.getString("cooldown", "10") ?: "10").toIntOrNull() ?: 10
 
     val quietHoursEnabled get() = prefs.getBoolean("quiet_enabled", false)

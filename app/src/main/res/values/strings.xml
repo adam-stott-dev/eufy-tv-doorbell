@@ -74,4 +74,7 @@
     <string name="problem_no_overlay">Eufy TV Doorbell isn\'t allowed to show over other apps, so pop-ups open full screen. Open the app for how to fix it.</string>
     <string name="problem_fixed">Eufy TV Doorbell is connected again</string>
     <string name="problem_fix_it">Select to fix it</string>
+    <string name="sleep_permission_ok">Allowed</string>
+    <string name="sleep_permission_missing">Not allowed yet. Select to allow it, so the TV can go back to sleep after a pop-up.</string>
+    <string name="sleep_permission_adb">This TV has no screen to allow it. Run: adb shell dpm set-active-admin io.github.adamstottdev.eufytv/.service.SleepAdmin</string>
 </resources>
