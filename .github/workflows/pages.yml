@@ -1,0 +1,73 @@
+name: Website
+
+# Rebuilds the GitHub Pages site when the docs or site change on main, after each
+# Android build on main (which publishes a release), and when a release is published.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "docs/**"
+      - "app/build.gradle.kts"
+      - ".github/workflows/pages.yml"
+  workflow_run:
+    workflows: [Android]
+    types: [completed]
+    branches: [main]
+  release:
+    types: [published]
+  pull_request:
+    paths:
+      - "site/**"
+      - "docs/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deploy at a time; a newer run waits rather than cancelling one mid-deploy.
+concurrency:
+  group: pages-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && 'main' || '' }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Build site
+        working-directory: site
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          npm ci --no-audit --no-fund
+          node build.mjs
+
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
+        with:
+          path: site/_site
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
