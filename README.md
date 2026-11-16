@@ -30,10 +30,12 @@ A lightweight background app for Android TV. When your Eufy doorbell rings, or a
    ```
    adb shell dumpsys deviceidle whitelist +io.github.adamstottdev.eufytv
    ```
-5. Optional, so the TV goes back to sleep after a pop-up that woke it (select **Allow putting the TV to sleep** in the settings, or run):
+5. Optional, so the TV goes back to sleep after a pop-up that woke it (select **Allow putting the TV to sleep** in the app's settings and turn it on, or run):
    ```
-   adb shell dpm set-active-admin io.github.adamstottdev.eufytv/.service.SleepAdmin
+   adb shell settings put secure enabled_accessibility_services io.github.adamstottdev.eufytv/.service.SleepService
+   adb shell settings put secure accessibility_enabled 1
    ```
+   This turns on a small accessibility service that only puts the TV to sleep; it reads nothing on screen. If you already use other accessibility services, add it to the list (separated by `:`) instead of replacing it, or turn it on in **Settings > Accessibility**.
 6. Open **Eufy TV Doorbell** from the apps row, choose **Eufy account** and sign in: scan the QR code with your phone and enter your details there (it's one-time, home network only, and encrypted on the phone), or type them on the TV. Then choose your settings.
 
 If anything stops the pop-ups working later (Eufy signs you out, a verification code is needed, the connection drops for more than a few minutes), a red message appears on screen and repeats until it's fixed. You can change how often in **Advanced**.

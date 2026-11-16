@@ -18,7 +18,7 @@ import io.github.adamstottdev.eufytv.eufy.DoorbellEvent
 import io.github.adamstottdev.eufytv.eufy.EufyConnection
 import io.github.adamstottdev.eufytv.eufy.EventType
 import io.github.adamstottdev.eufytv.eufy.LiveStreamSink
-import io.github.adamstottdev.eufytv.service.SleepAdmin
+import io.github.adamstottdev.eufytv.service.SleepService
 import io.github.adamstottdev.eufytv.settings.Settings
 import java.io.File
 import java.text.DateFormat
@@ -119,7 +119,7 @@ object PopupController {
         if (!replacing && wokeTv && app != null) {
             wokeTv = false
             if (Settings(app).sleepAfter) {
-                val ok = SleepAdmin.sleepNow(app)
+                val ok = SleepService.sleepNow()
                 Log.i(TAG, if (ok) "Putting the TV back to sleep" else "Can't put the TV to sleep (not allowed)")
             }
         }

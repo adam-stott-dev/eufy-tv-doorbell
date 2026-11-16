@@ -19,7 +19,7 @@ import io.github.adamstottdev.eufytv.eufy.BridgeState
 import io.github.adamstottdev.eufytv.eufy.EufyConnection
 import io.github.adamstottdev.eufytv.service.DoorbellService
 import io.github.adamstottdev.eufytv.service.ProblemAlerts
-import io.github.adamstottdev.eufytv.service.SleepAdmin
+import io.github.adamstottdev.eufytv.service.SleepService
 
 class SettingsFragment : PreferenceFragmentCompat() {
     private val observer = EufyConnection.Observer { refreshStatus() }
@@ -74,9 +74,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
             updatesContinuously = false
         }
         findPreference<Preference>("sleep_permission")?.setOnPreferenceClickListener {
-            if (!SleepAdmin.isActive(requireContext())) {
+            if (!SleepService.isEnabled(requireContext())) {
                 try {
-                    startActivity(SleepAdmin.requestIntent(requireContext()))
+                    startActivity(Intent(AndroidSettings.ACTION_ACCESSIBILITY_SETTINGS))
                 } catch (e: Exception) {
                     Toast.makeText(requireContext(), R.string.sleep_permission_adb, Toast.LENGTH_LONG).show()
                 }
@@ -115,7 +115,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             else getString(R.string.battery_missing, pkg)
 
         findPreference<Preference>("sleep_permission")?.apply {
-            val active = SleepAdmin.isActive(ctx)
+            val active = SleepService.isEnabled(ctx)
             summary = getString(if (active) R.string.sleep_permission_ok else R.string.sleep_permission_missing)
             isVisible = !active || findPreference<SwitchPreferenceCompat>("sleep_after")?.isChecked == true
         }

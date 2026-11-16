@@ -75,6 +75,8 @@
     <string name="problem_fixed">Eufy TV Doorbell is connected again</string>
     <string name="problem_fix_it">Select to fix it</string>
     <string name="sleep_permission_ok">Allowed</string>
-    <string name="sleep_permission_missing">Not allowed yet. Select to allow it, so the TV can go back to sleep after a pop-up.</string>
-    <string name="sleep_permission_adb">This TV has no screen to allow it. Run: adb shell dpm set-active-admin io.github.adamstottdev.eufytv/.service.SleepAdmin</string>
+    <string name="sleep_permission_missing">Not allowed yet. Select it, then turn on \"Eufy TV Doorbell sleep\" in Accessibility.</string>
+    <string name="sleep_permission_adb">Turn on \"Eufy TV Doorbell sleep\" in Settings, Accessibility.</string>
+    <string name="sleep_service_label">Eufy TV Doorbell sleep</string>
+    <string name="sleep_service_description">Puts the TV back to sleep after a doorbell pop-up woke it. It does not read anything on screen.</string>
 </resources>
