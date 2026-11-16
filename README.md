@@ -8,7 +8,7 @@ A lightweight background app for Android TV. When your Eufy doorbell rings, or a
 >
 > Needs a 64-bit ARM TV box (arm64-v8a), such as the SHIELD TV, Chromecast with Google TV or most current boxes.
 
-## Planned features
+## Features
 
 - Pop-up on ring, motion or person detection, per camera.
 - Picture-in-picture (size and corner of your choice) or full screen, set separately for when the TV is on and when the pop-up wakes it (full screen by default).
@@ -25,7 +25,7 @@ A lightweight background app for Android TV. When your Eufy doorbell rings, or a
    ```
    adb shell appops set io.github.adamstottdev.eufytv SYSTEM_ALERT_WINDOW allow
    ```
-   Without it, the pop-up opens full screen instead.
+   Don't skip this: without it, Android usually stops the pop-up appearing over other apps.
 4. Optional, for faster pop-ups after the TV has been asleep:
    ```
    adb shell dumpsys deviceidle whitelist +io.github.adamstottdev.eufytv

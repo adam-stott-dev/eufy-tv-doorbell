@@ -26,27 +26,27 @@ When something stops the pop-ups working, a red message appears on screen and re
 
 ## No motion pop-ups
 
-- Check **Motion detected** and **Person detected** are on in **When to pop up**, and that the camera is ticked in **Cameras that pop up**.
+- Check **Motion detected** and **Person detected** are on in **When to pop up**, and that the camera is chosen in **Camera that pops up**.
 - In the Eufy Security app, check motion detection and notifications are on for the camera. The TV only hears about events Eufy sends.
 - **Wait between motion pop-ups** may be holding back a repeat.
 
 ## The video doesn't start
 
 - The TV and the HomeBase must be on the same network for local video. If they aren't, turn off **Keep video on my home network**.
-- Select **Show live view now** to test without waiting for an event.
+- Select **Check and test > Show a test pop-up** to see your camera live without waiting for an event.
 
 ## Testing from a computer
 
-Show the test pop-up without touching the TV, optionally after a delay so you can start the screensaver or a video first:
+Show the test pop-up (your camera, live) without touching the TV, optionally after a delay so you can start the screensaver or a video first:
 
 ```
 adb shell am broadcast -a io.github.adamstottdev.eufytv.TEST_POPUP -n io.github.adamstottdev.eufytv/.service.TestTriggerReceiver --el delay_ms 0
 ```
 
-Open the doorbell's live view the same way:
+The app keeps a short log of doorbell events, connection changes and how long each pop-up took:
 
 ```
-adb shell am broadcast -a io.github.adamstottdev.eufytv.TEST_POPUP -n io.github.adamstottdev.eufytv/.service.TestTriggerReceiver --es live doorbell
+adb shell cat /sdcard/Android/data/io.github.adamstottdev.eufytv/files/events.log
 ```
 
 Save the TV's recent log to a file, to look through or attach to an issue:
