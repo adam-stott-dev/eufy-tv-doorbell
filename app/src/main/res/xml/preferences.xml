@@ -6,20 +6,12 @@
         <Preference app:key="problem" app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="Status" app:iconSpaceReserved="false">
+    <PreferenceCategory app:title="Doorbell" app:iconSpaceReserved="false">
         <SwitchPreferenceCompat
             app:key="service_enabled"
             app:defaultValue="true"
             app:title="Watch for doorbell and motion"
             app:iconSpaceReserved="false" />
-        <Preference app:key="status_service" app:title="Background service" app:iconSpaceReserved="false" />
-        <Preference app:key="status_overlay" app:title="Show over other apps" app:iconSpaceReserved="false" />
-        <Preference app:key="battery" app:title="Battery and standby" app:iconSpaceReserved="false" />
-        <Preference app:key="test_popup" app:title="Show a test pop-up" app:summary="Uses your current settings" app:iconSpaceReserved="false" />
-        <Preference app:key="test_popup_delayed" app:title="Show a test pop-up in 15 seconds" app:summary="Time to open another app or start the screensaver first" app:iconSpaceReserved="false" />
-    </PreferenceCategory>
-
-    <PreferenceCategory app:title="Eufy account" app:iconSpaceReserved="false">
         <Preference
             app:key="account"
             app:title="Eufy account"
@@ -28,163 +20,245 @@
             app:key="popup_camera"
             app:title="Camera that pops up"
             app:iconSpaceReserved="false" />
-        <Preference
-            app:key="live_view"
-            app:title="Test the live pop-up"
-            app:iconSpaceReserved="false" />
-        <SwitchPreferenceCompat
-            app:key="local_only"
-            app:defaultValue="true"
-            app:title="Keep video on my home network"
-            app:summary="Off: allow Eufy's relay if a direct connection fails"
-            app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="When to pop up" app:iconSpaceReserved="false">
-        <SwitchPreferenceCompat app:key="trigger_ring" app:defaultValue="true" app:title="Doorbell rings" app:iconSpaceReserved="false" />
-        <SwitchPreferenceCompat app:key="trigger_motion" app:defaultValue="true" app:title="Motion detected" app:iconSpaceReserved="false" />
-        <SwitchPreferenceCompat app:key="trigger_person" app:defaultValue="true" app:title="Person detected" app:iconSpaceReserved="false" />
-        <ListPreference
-            app:key="show_when"
-            app:defaultValue="always"
-            app:entries="@array/show_when_names"
-            app:entryValues="@array/show_when_values"
-            app:title="Show"
-            app:useSimpleSummaryProvider="true"
-            app:iconSpaceReserved="false" />
-        <ListPreference
-            app:key="cooldown"
-            app:defaultValue="10"
-            app:entries="@array/cooldown_names"
-            app:entryValues="@array/cooldown_values"
-            app:title="Wait between motion pop-ups"
-            app:useSimpleSummaryProvider="true"
-            app:iconSpaceReserved="false" />
-        <SwitchPreferenceCompat
-            app:key="wake_screen"
-            app:defaultValue="true"
-            app:title="Wake the TV and close the screensaver"
-            app:iconSpaceReserved="false" />
-        <SwitchPreferenceCompat
-            app:key="sleep_after"
-            app:defaultValue="true"
-            app:dependency="wake_screen"
-            app:title="Put the TV back to sleep afterwards"
-            app:summary="Only when the pop-up woke it"
-            app:iconSpaceReserved="false" />
-        <Preference
-            app:key="sleep_permission"
-            app:dependency="wake_screen"
-            app:title="Allow putting the TV to sleep"
-            app:iconSpaceReserved="false" />
-    </PreferenceCategory>
+    <PreferenceCategory app:title="Settings" app:iconSpaceReserved="false">
+        <PreferenceScreen
+            app:key="screen_when"
+            app:title="When to pop up"
+            app:summary="Ring, motion, person, quiet hours"
+            app:iconSpaceReserved="false">
+            <PreferenceCategory app:title="Pop up for" app:iconSpaceReserved="false">
+                <SwitchPreferenceCompat app:key="trigger_ring" app:defaultValue="true" app:title="Doorbell rings" app:iconSpaceReserved="false" />
+                <SwitchPreferenceCompat app:key="trigger_motion" app:defaultValue="true" app:title="Motion detected" app:iconSpaceReserved="false" />
+                <SwitchPreferenceCompat app:key="trigger_person" app:defaultValue="true" app:title="Person detected" app:iconSpaceReserved="false" />
+                <ListPreference
+                    app:key="show_when"
+                    app:defaultValue="always"
+                    app:entries="@array/show_when_names"
+                    app:entryValues="@array/show_when_values"
+                    app:title="Show"
+                    app:useSimpleSummaryProvider="true"
+                    app:iconSpaceReserved="false" />
+                <ListPreference
+                    app:key="cooldown"
+                    app:defaultValue="10"
+                    app:entries="@array/cooldown_names"
+                    app:entryValues="@array/cooldown_values"
+                    app:title="Wait between motion pop-ups"
+                    app:useSimpleSummaryProvider="true"
+                    app:iconSpaceReserved="false" />
+            </PreferenceCategory>
+            <PreferenceCategory app:title="Quiet hours" app:iconSpaceReserved="false">
+                <SwitchPreferenceCompat app:key="quiet_enabled" app:defaultValue="false" app:title="Use quiet hours" app:iconSpaceReserved="false" />
+                <ListPreference
+                    app:key="quiet_start"
+                    app:defaultValue="23"
+                    app:dependency="quiet_enabled"
+                    app:entries="@array/hour_names"
+                    app:entryValues="@array/hour_values"
+                    app:title="From"
+                    app:useSimpleSummaryProvider="true"
+                    app:iconSpaceReserved="false" />
+                <ListPreference
+                    app:key="quiet_end"
+                    app:defaultValue="7"
+                    app:dependency="quiet_enabled"
+                    app:entries="@array/hour_names"
+                    app:entryValues="@array/hour_values"
+                    app:title="Until"
+                    app:useSimpleSummaryProvider="true"
+                    app:iconSpaceReserved="false" />
+                <SwitchPreferenceCompat
+                    app:key="quiet_allow_ring"
+                    app:defaultValue="true"
+                    app:dependency="quiet_enabled"
+                    app:title="Still show doorbell rings"
+                    app:iconSpaceReserved="false" />
+            </PreferenceCategory>
+        </PreferenceScreen>
 
-    <PreferenceCategory app:title="Quiet hours" app:iconSpaceReserved="false">
-        <SwitchPreferenceCompat app:key="quiet_enabled" app:defaultValue="false" app:title="Use quiet hours" app:iconSpaceReserved="false" />
-        <ListPreference
-            app:key="quiet_start"
-            app:defaultValue="23"
-            app:dependency="quiet_enabled"
-            app:entries="@array/hour_names"
-            app:entryValues="@array/hour_values"
-            app:title="From"
-            app:useSimpleSummaryProvider="true"
-            app:iconSpaceReserved="false" />
-        <ListPreference
-            app:key="quiet_end"
-            app:defaultValue="7"
-            app:dependency="quiet_enabled"
-            app:entries="@array/hour_names"
-            app:entryValues="@array/hour_values"
-            app:title="Until"
-            app:useSimpleSummaryProvider="true"
-            app:iconSpaceReserved="false" />
-        <SwitchPreferenceCompat
-            app:key="quiet_allow_ring"
-            app:defaultValue="true"
-            app:dependency="quiet_enabled"
-            app:title="Still show doorbell rings"
-            app:iconSpaceReserved="false" />
-    </PreferenceCategory>
+        <PreferenceScreen
+            app:key="screen_awake"
+            app:title="When the TV is on"
+            app:summary="Also when the screensaver is showing"
+            app:iconSpaceReserved="false">
+            <ListPreference
+                app:key="popup_mode"
+                app:defaultValue="pip"
+                app:entries="@array/popup_mode_names"
+                app:entryValues="@array/popup_mode_values"
+                app:title="Style"
+                app:useSimpleSummaryProvider="true"
+                app:iconSpaceReserved="false" />
+            <SeekBarPreference
+                app:key="popup_size"
+                app:defaultValue="50"
+                app:min="20"
+                android:max="100"
+                app:seekBarIncrement="5"
+                app:showSeekBarValue="true"
+                app:title="Pop-up size"
+                app:summary="How tall the pop-up is, as % of the screen. Select it, then use left and right on the remote."
+                app:iconSpaceReserved="false" />
+            <ListPreference
+                app:key="pip_corner"
+                app:defaultValue="top_right"
+                app:entries="@array/corner_names"
+                app:entryValues="@array/corner_values"
+                app:title="Position"
+                app:useSimpleSummaryProvider="true"
+                app:iconSpaceReserved="false" />
+            <SeekBarPreference
+                app:key="popup_duration"
+                app:defaultValue="30"
+                app:min="5"
+                android:max="120"
+                app:seekBarIncrement="5"
+                app:showSeekBarValue="true"
+                app:title="Seconds on screen"
+                app:iconSpaceReserved="false" />
+            <ListPreference
+                app:key="audio"
+                app:defaultValue="ring_only"
+                app:entries="@array/audio_names"
+                app:entryValues="@array/audio_values"
+                app:title="Sound"
+                app:useSimpleSummaryProvider="true"
+                app:iconSpaceReserved="false" />
+        </PreferenceScreen>
 
-    <PreferenceCategory app:title="Pop-up" app:iconSpaceReserved="false">
-        <ListPreference
-            app:key="popup_mode"
-            app:defaultValue="pip"
-            app:entries="@array/popup_mode_names"
-            app:entryValues="@array/popup_mode_values"
-            app:title="Style"
-            app:useSimpleSummaryProvider="true"
-            app:iconSpaceReserved="false" />
-        <SeekBarPreference
-            app:key="popup_size"
-            app:defaultValue="50"
-            app:min="20"
-            android:max="100"
-            app:seekBarIncrement="5"
-            app:showSeekBarValue="true"
-            app:title="Pop-up size"
-            app:summary="How tall the pop-up is, as % of the screen. Select it, then use left and right on the remote."
-            app:iconSpaceReserved="false" />
-        <ListPreference
-            app:key="pip_corner"
-            app:defaultValue="top_right"
-            app:entries="@array/corner_names"
-            app:entryValues="@array/corner_values"
-            app:title="Picture-in-picture position"
-            app:useSimpleSummaryProvider="true"
-            app:iconSpaceReserved="false" />
-        <SeekBarPreference
-            app:key="popup_duration"
-            app:defaultValue="30"
-            app:min="5"
-            android:max="120"
-            app:seekBarIncrement="5"
-            app:showSeekBarValue="true"
-            app:title="Seconds on screen"
-            app:iconSpaceReserved="false"
-            />
-        <SwitchPreferenceCompat
-            app:key="extend_on_motion"
-            app:defaultValue="true"
-            app:title="Stay up while motion continues"
-            app:iconSpaceReserved="false" />
-        <SwitchPreferenceCompat
-            app:key="show_label"
-            app:defaultValue="true"
-            app:title="Show camera name and time"
-            app:iconSpaceReserved="false" />
-        <SwitchPreferenceCompat
-            app:key="back_closes"
-            app:defaultValue="true"
-            app:title="Back button closes the pop-up"
-            app:summary="While it is showing, the remote controls the pop-up instead of the app behind it"
-            app:iconSpaceReserved="false" />
-        <ListPreference
-            app:key="audio"
-            app:defaultValue="ring_only"
-            app:entries="@array/audio_names"
-            app:entryValues="@array/audio_values"
-            app:title="Sound"
-            app:useSimpleSummaryProvider="true"
-            app:iconSpaceReserved="false" />
-    </PreferenceCategory>
+        <PreferenceScreen
+            app:key="screen_asleep"
+            app:title="When the TV is asleep"
+            app:iconSpaceReserved="false">
+            <SwitchPreferenceCompat
+                app:key="wake_screen"
+                app:defaultValue="true"
+                app:title="Wake the TV"
+                app:summary="Off: no pop-up while the TV is asleep"
+                app:iconSpaceReserved="false" />
+            <SwitchPreferenceCompat
+                app:key="sleep_after"
+                app:defaultValue="true"
+                app:dependency="wake_screen"
+                app:title="Put the TV back to sleep afterwards"
+                app:summary="Not if you close the pop-up with the remote"
+                app:iconSpaceReserved="false" />
+            <Preference
+                app:key="sleep_permission"
+                app:dependency="wake_screen"
+                app:title="Allow putting the TV to sleep"
+                app:iconSpaceReserved="false" />
+            <PreferenceCategory app:key="asleep_style" app:title="Pop-up" app:dependency="wake_screen" app:iconSpaceReserved="false">
+                <ListPreference
+                    app:key="asleep_popup_mode"
+                    app:defaultValue="fullscreen"
+                    app:entries="@array/popup_mode_names"
+                    app:entryValues="@array/popup_mode_values"
+                    app:title="Style"
+                    app:useSimpleSummaryProvider="true"
+                    app:iconSpaceReserved="false" />
+                <SeekBarPreference
+                    app:key="asleep_popup_size"
+                    app:defaultValue="50"
+                    app:min="20"
+                    android:max="100"
+                    app:seekBarIncrement="5"
+                    app:showSeekBarValue="true"
+                    app:title="Pop-up size"
+                    app:summary="How tall the pop-up is, as % of the screen. Select it, then use left and right on the remote."
+                    app:iconSpaceReserved="false" />
+                <ListPreference
+                    app:key="asleep_pip_corner"
+                    app:defaultValue="top_right"
+                    app:entries="@array/corner_names"
+                    app:entryValues="@array/corner_values"
+                    app:title="Position"
+                    app:useSimpleSummaryProvider="true"
+                    app:iconSpaceReserved="false" />
+                <SeekBarPreference
+                    app:key="asleep_popup_duration"
+                    app:defaultValue="30"
+                    app:min="5"
+                    android:max="120"
+                    app:seekBarIncrement="5"
+                    app:showSeekBarValue="true"
+                    app:title="Seconds on screen"
+                    app:iconSpaceReserved="false" />
+                <ListPreference
+                    app:key="asleep_audio"
+                    app:defaultValue="ring_only"
+                    app:entries="@array/audio_names"
+                    app:entryValues="@array/audio_values"
+                    app:title="Sound"
+                    app:useSimpleSummaryProvider="true"
+                    app:iconSpaceReserved="false" />
+            </PreferenceCategory>
+        </PreferenceScreen>
 
-    <PreferenceCategory app:title="Advanced" app:iconSpaceReserved="false">
-        <ListPreference
-            app:key="problem_reminder"
-            app:defaultValue="30"
-            app:entries="@array/reminder_names"
-            app:entryValues="@array/reminder_values"
-            app:title="Remind me on screen when something is wrong"
-            app:useSimpleSummaryProvider="true"
-            app:iconSpaceReserved="false" />
-        <SwitchPreferenceCompat
-            app:key="keep_awake"
-            app:defaultValue="true"
-            app:title="Stay connected while the TV sleeps"
-            app:summary="Faster pop-ups after standby, uses a little more power"
-            app:iconSpaceReserved="false" />
+        <PreferenceScreen
+            app:key="screen_popup"
+            app:title="All pop-ups"
+            app:summary="Label, remote control, motion"
+            app:iconSpaceReserved="false">
+            <SwitchPreferenceCompat
+                app:key="show_label"
+                app:defaultValue="true"
+                app:title="Show camera name and time"
+                app:iconSpaceReserved="false" />
+            <SwitchPreferenceCompat
+                app:key="back_closes"
+                app:defaultValue="true"
+                app:title="Back button closes the pop-up"
+                app:summary="While it is showing, the remote controls the pop-up instead of the app behind it"
+                app:iconSpaceReserved="false" />
+            <SwitchPreferenceCompat
+                app:key="extend_on_motion"
+                app:defaultValue="true"
+                app:title="Stay up while motion continues"
+                app:iconSpaceReserved="false" />
+        </PreferenceScreen>
+
+        <PreferenceScreen
+            app:key="screen_test"
+            app:title="Check and test"
+            app:summary="Status, test pop-ups"
+            app:iconSpaceReserved="false">
+            <Preference app:key="status_service" app:title="Background service" app:iconSpaceReserved="false" />
+            <Preference app:key="status_overlay" app:title="Show over other apps" app:iconSpaceReserved="false" />
+            <Preference app:key="battery" app:title="Battery and standby" app:iconSpaceReserved="false" />
+            <Preference app:key="live_view" app:title="Test the live pop-up" app:iconSpaceReserved="false" />
+            <Preference app:key="test_popup" app:title="Show a test pop-up" app:summary="Uses your current settings" app:iconSpaceReserved="false" />
+            <Preference app:key="test_popup_delayed" app:title="Show a test pop-up in 15 seconds" app:summary="Time to open another app, start the screensaver or put the TV to sleep first" app:iconSpaceReserved="false" />
+        </PreferenceScreen>
+
+        <PreferenceScreen
+            app:key="screen_advanced"
+            app:title="Advanced"
+            app:iconSpaceReserved="false">
+            <SwitchPreferenceCompat
+                app:key="local_only"
+                app:defaultValue="true"
+                app:title="Keep video on my home network"
+                app:summary="Off: allow Eufy's relay if a direct connection fails"
+                app:iconSpaceReserved="false" />
+            <ListPreference
+                app:key="problem_reminder"
+                app:defaultValue="30"
+                app:entries="@array/reminder_names"
+                app:entryValues="@array/reminder_values"
+                app:title="Remind me on screen when something is wrong"
+                app:useSimpleSummaryProvider="true"
+                app:iconSpaceReserved="false" />
+            <SwitchPreferenceCompat
+                app:key="keep_awake"
+                app:defaultValue="true"
+                app:title="Stay connected while the TV sleeps"
+                app:summary="Faster pop-ups after standby, uses a little more power"
+                app:iconSpaceReserved="false" />
+        </PreferenceScreen>
+
         <Preference app:key="version" app:title="Version" app:iconSpaceReserved="false" />
     </PreferenceCategory>
 </PreferenceScreen>

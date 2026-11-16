@@ -48,6 +48,7 @@ object PopupController {
     /** True when the TV was asleep and this pop-up woke it, so it goes back to sleep after. */
     private var wokeTv = false
     private var appContext: Context? = null
+    private var style: Settings.Style? = null
     private val hideRunnable = Runnable { hide() }
 
     fun isShowing(serial: String) = current?.deviceSerial == serial
@@ -58,12 +59,19 @@ object PopupController {
         val settings = Settings(app)
         appContext = app
         hide(replacing = true)
+        val asleep = !(app.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive
+        if (asleep && !settings.wakeScreen) {
+            Log.i(TAG, "TV is asleep and waking it is off, no pop-up for ${event.type}")
+            return@post
+        }
         current = event
-        durationMs = durationOverrideMs ?: (settings.durationSeconds * 1000L)
+        // A pop-up that replaces one which woke the TV keeps the "asleep" look.
+        val s = settings.style(asleep = (asleep || wokeTv) && settings.wakeScreen)
+        style = s
+        durationMs = durationOverrideMs ?: (s.durationSeconds * 1000L)
 
         Log.i(TAG, "Showing ${event.type} from ${event.deviceName} for ${durationMs / 1000}s " +
-            "(overlay=${AndroidSettings.canDrawOverlays(app)}, mode=${settings.popupMode}, wake=${settings.wakeScreen})")
-        val asleep = !(app.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive
+            "(overlay=${AndroidSettings.canDrawOverlays(app)}, asleep=$asleep, mode=${s.mode}, wake=${settings.wakeScreen})")
         if (settings.wakeScreen) {
             // A pop-up that replaces one which woke the TV keeps that flag.
             wokeTv = wokeTv || asleep
@@ -72,7 +80,7 @@ object PopupController {
 
         val label = if (settings.showLabel) labelFor(app, event) else null
         if (AndroidSettings.canDrawOverlays(app)) {
-            showOverlay(app, settings, event, label)
+            showOverlay(app, settings, s, event, label)
         } else {
             Log.i(TAG, "No overlay permission, using full-screen activity")
             app.startActivity(
@@ -147,7 +155,7 @@ object PopupController {
         hide()
     }
 
-    private fun showOverlay(app: Context, s: Settings, event: DoorbellEvent, label: String?) {
+    private fun showOverlay(app: Context, settings: Settings, style: Settings.Style, event: DoorbellEvent, label: String?) {
         val wm = app.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         val screen = app.resources.displayMetrics
         val sw = screen.widthPixels
@@ -156,7 +164,7 @@ object PopupController {
         var flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
-        flags = if (s.backCloses) {
+        flags = if (settings.backCloses) {
             flags or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
         } else {
             flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
@@ -170,14 +178,14 @@ object PopupController {
             PixelFormat.TRANSLUCENT,
         )
         lp.title = "Doorbell pop-up"
-        if (s.popupMode == Settings.PopupMode.PIP) {
-            val h = (sh * s.pipHeightFraction).toInt()
+        if (style.mode == Settings.PopupMode.PIP) {
+            val h = (sh * style.heightFraction).toInt()
             lp.height = h
             lp.width = (h * DEFAULT_ASPECT).toInt()
             val margin = (sw * 0.03f).toInt()
             lp.x = margin
             lp.y = margin
-            lp.gravity = when (s.corner) {
+            lp.gravity = when (style.corner) {
                 Settings.Corner.TOP_LEFT -> Gravity.TOP or Gravity.START
                 Settings.Corner.TOP_RIGHT -> Gravity.TOP or Gravity.END
                 Settings.Corner.BOTTOM_LEFT -> Gravity.BOTTOM or Gravity.START
@@ -195,7 +203,7 @@ object PopupController {
         wm.addView(view, lp)
         Log.i(TAG, "Overlay added ${lp.width}x${lp.height}")
         overlay = view
-        if (s.backCloses) view.requestFocus()
+        if (settings.backCloses) view.requestFocus()
     }
 
     private fun buildView(ctx: Context, event: DoorbellEvent, label: String?): PopupView {
@@ -230,7 +238,7 @@ object PopupController {
             }, "TestVideoFeeder").apply { start() }
             return
         }
-        val audio = when (Settings(ctx).audio) {
+        val audio = when ((style ?: Settings(ctx).style(asleep = false)).audio) {
             Settings.Audio.OFF -> false
             Settings.Audio.ON -> true
             Settings.Audio.RING_ONLY -> event.type == EventType.RING || event.type == EventType.LIVE

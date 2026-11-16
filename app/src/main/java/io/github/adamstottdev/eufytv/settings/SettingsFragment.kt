@@ -22,10 +22,33 @@ import io.github.adamstottdev.eufytv.service.ProblemAlerts
 import io.github.adamstottdev.eufytv.service.SleepService
 
 class SettingsFragment : PreferenceFragmentCompat() {
+    companion object {
+        /** The settings sub-menu whose key is [key]. */
+        fun forScreen(key: String) = SettingsFragment().apply {
+            arguments = Bundle().apply { putString(ARG_PREFERENCE_ROOT, key) }
+        }
+    }
+
     private val observer = EufyConnection.Observer { refreshStatus() }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        Settings(requireContext()).seedAsleepStyle()
         setPreferencesFromResource(R.xml.preferences, rootKey)
+        if (rootKey != null) {
+            // There is no title bar, so say which sub-menu this is.
+            preferenceScreen.addPreference(PreferenceCategory(requireContext()).apply {
+                title = preferenceScreen.title
+                order = -1
+                isIconSpaceReserved = false
+            })
+        }
+        for (prefix in listOf("", Settings.ASLEEP)) {
+            findPreference<ListPreference>(prefix + "popup_mode")?.setOnPreferenceChangeListener { _, v ->
+                showPipOptions(prefix, v == "pip")
+                true
+            }
+            findPreference<ListPreference>(prefix + "popup_mode")?.let { showPipOptions(prefix, it.value == "pip") }
+        }
 
         findPreference<SwitchPreferenceCompat>(Settings.KEY_SERVICE_ENABLED)?.setOnPreferenceChangeListener { _, on ->
             if (on == true) DoorbellService.start(requireContext()) else DoorbellService.stop(requireContext())
@@ -84,6 +107,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
         findPreference<Preference>("version")?.summary = BuildConfig.VERSION_NAME
+    }
+
+    /** Size and position only matter for picture-in-picture. */
+    private fun showPipOptions(prefix: String, pip: Boolean) {
+        findPreference<Preference>(prefix + Settings.KEY_POPUP_SIZE)?.isVisible = pip
+        findPreference<Preference>(prefix + "pip_corner")?.isVisible = pip
     }
 
     override fun onResume() {

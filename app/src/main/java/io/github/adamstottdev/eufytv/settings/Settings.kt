@@ -21,14 +21,44 @@ class Settings(context: Context) {
     val triggerMotion get() = prefs.getBoolean("trigger_motion", true)
     val triggerPerson get() = prefs.getBoolean("trigger_person", true)
 
-    val popupMode get() = enumPref("popup_mode", PopupMode.PIP)
-    val corner get() = enumPref("pip_corner", Corner.TOP_RIGHT)
+    /** How a pop-up looks; there is one set for when the TV is on and one for when the pop-up wakes it. */
+    data class Style(
+        val mode: PopupMode,
+        /** Pop-up height as a fraction of the screen height (picture-in-picture only). */
+        val heightFraction: Float,
+        val corner: Corner,
+        val durationSeconds: Int,
+        val audio: Audio,
+    )
 
-    /** Pop-up height as a fraction of the screen height (picture-in-picture only). */
-    val pipHeightFraction: Float
-        get() = popupSizePercent / 100f
+    /** The style to use, depending on whether the TV was asleep when the event came in. */
+    fun style(asleep: Boolean): Style = if (!asleep) Style(
+        mode = enumPref("popup_mode", PopupMode.PIP),
+        heightFraction = popupSizePercent / 100f,
+        corner = enumPref("pip_corner", Corner.TOP_RIGHT),
+        durationSeconds = prefs.getInt("popup_duration", 30).coerceIn(5, 300),
+        audio = enumPref("audio", Audio.RING_ONLY),
+    ) else Style(
+        mode = enumPref(ASLEEP + "popup_mode", PopupMode.FULLSCREEN),
+        heightFraction = prefs.getInt(ASLEEP + KEY_POPUP_SIZE, popupSizePercent).coerceIn(20, 100) / 100f,
+        corner = enumPref(ASLEEP + "pip_corner", enumPref("pip_corner", Corner.TOP_RIGHT)),
+        durationSeconds = prefs.getInt(ASLEEP + "popup_duration", prefs.getInt("popup_duration", 30)).coerceIn(5, 300),
+        audio = enumPref(ASLEEP + "audio", enumPref("audio", Audio.RING_ONLY)),
+    )
 
-    /** Picture-in-picture height in % of the screen height, set with a slider. */
+    /** Starts the "TV asleep" size, position, time and sound from the "TV on" ones, the first time. */
+    fun seedAsleepStyle() {
+        if (prefs.contains(ASLEEP + "popup_duration")) return
+        val on = style(asleep = false)
+        prefs.edit()
+            .putInt(ASLEEP + KEY_POPUP_SIZE, popupSizePercent)
+            .putString(ASLEEP + "pip_corner", on.corner.name.lowercase())
+            .putInt(ASLEEP + "popup_duration", on.durationSeconds)
+            .putString(ASLEEP + "audio", on.audio.name.lowercase())
+            .apply()
+    }
+
+    /** Picture-in-picture height in % of the screen height while the TV is on, set with a slider. */
     val popupSizePercent: Int
         get() = if (prefs.contains(KEY_POPUP_SIZE)) prefs.getInt(KEY_POPUP_SIZE, 50).coerceIn(20, 100)
         else when (prefs.getString("pip_size", "medium")) { // the older Small/Medium/Large choice
@@ -37,11 +67,9 @@ class Settings(context: Context) {
             else -> 50
         }
 
-    val durationSeconds get() = prefs.getInt("popup_duration", 30).coerceIn(5, 300)
     val extendOnMotion get() = prefs.getBoolean("extend_on_motion", true)
     val showLabel get() = prefs.getBoolean("show_label", true)
     val backCloses get() = prefs.getBoolean("back_closes", true)
-    val audio get() = enumPref("audio", Audio.RING_ONLY)
     val showWhen get() = enumPref("show_when", ShowWhen.ALWAYS)
     val wakeScreen get() = prefs.getBoolean("wake_screen", true)
     val sleepAfter get() = prefs.getBoolean("sleep_after", true)
@@ -87,5 +115,7 @@ class Settings(context: Context) {
         const val KEY_SERVICE_ENABLED = "service_enabled"
         const val KEY_CAMERA = "popup_camera"
         const val KEY_POPUP_SIZE = "popup_size"
+        /** Prefix for the settings used when the pop-up wakes the TV. */
+        const val ASLEEP = "asleep_"
     }
 }

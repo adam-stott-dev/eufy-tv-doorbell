@@ -11,7 +11,7 @@ A lightweight background app for Android TV. When your Eufy doorbell rings, or a
 ## Planned features
 
 - Pop-up on ring, motion or person detection, per camera.
-- Picture-in-picture (size and corner of your choice) or full screen.
+- Picture-in-picture (size and corner of your choice) or full screen, set separately for when the TV is on and when the pop-up wakes it (full screen by default).
 - Shows over apps, the home screen and the screensaver; can wake the TV, and put it back to sleep afterwards if the pop-up woke it.
 - Configurable duration, audio, quiet hours and cooldown.
 - Video stays on your home network (local P2P to the HomeBase).
